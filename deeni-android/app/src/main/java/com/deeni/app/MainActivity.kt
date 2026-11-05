@@ -424,6 +424,18 @@ class MainActivity : Activity() {
                     const parsed=new DOMParser().parseFromString(source,'image/svg+xml');
                     const svg=parsed.documentElement;
                     if(svg.querySelector('parsererror')) throw new Error('SVG parse error');
+                    // Treat downloaded SVG as data: remove executable and embedded content before mounting.
+                    svg.querySelectorAll('script,foreignObject,iframe,object,embed,audio,video').forEach(function(node){node.remove();});
+                    [svg].concat(Array.from(svg.querySelectorAll('*'))).forEach(function(node){
+                      Array.from(node.attributes||[]).forEach(function(attr){
+                        const name=attr.name.toLowerCase();
+                        const value=attr.value.trim();
+                        if(name.startsWith('on') || ((name==='href' || name==='xlink:href') && value && !value.startsWith('#')) || (name==='style' && /url\\s*\\(|expression\\s*\\(/i.test(value))) node.removeAttribute(attr.name);
+                      });
+                    });
+                    svg.querySelectorAll('style').forEach(function(node){
+                      node.textContent=node.textContent.replace(/@import[^;]*;?/gi,'').replace(/url\\s*\\([^)]*\\)/gi,'');
+                    });
                     svg.removeAttribute('width');
                     svg.removeAttribute('height');
                     host.replaceChildren(document.importNode(svg,true));
