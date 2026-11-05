@@ -2,8 +2,14 @@ package com.deeni.app
 
 /** Checks Quran API payload metadata before its contents are rendered. */
 internal object QuranPageValidation {
+    fun pageNumber(returned: Int): Int {
+        require(returned in 1..604) { "Returned page is outside the mushaf" }
+        return returned
+    }
+
     fun pageNumber(requested: Int, returned: Int): Int {
         require(requested in 1..604) { "Requested page is outside the mushaf" }
+        pageNumber(returned)
         require(returned == requested) { "Quran service returned a different page" }
         return returned
     }
