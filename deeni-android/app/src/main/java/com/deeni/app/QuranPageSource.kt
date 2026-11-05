@@ -24,7 +24,9 @@ object QuranPageSource {
             val envelope = JSONObject(body)
             check(envelope.optString("code") == "200") { "Quran service response was not successful" }
             val data = envelope.getJSONObject("data")
-            data.getString("text") to data.getInt("page")
+            val text = QuranPageValidation.ayahText(surah, ayah, data.getString("text"))
+            val page = QuranPageValidation.pageNumber(data.getInt("page"), data.getInt("page"))
+            text to page
         } finally {
             connection.disconnect()
         }
@@ -45,7 +47,7 @@ object QuranPageSource {
             val envelope = JSONObject(body)
             check(envelope.optString("code") == "200") { "Quran service response was not successful" }
             val data = envelope.getJSONObject("data")
-            data.getString("text")
+            QuranPageValidation.ayahText(surah, ayah, data.getString("text"))
         } finally {
             connection.disconnect()
         }
@@ -66,7 +68,9 @@ object QuranPageSource {
             val envelope = JSONObject(body)
             check(envelope.optString("code") == "200") { "Quran service response was not successful" }
             val data = envelope.getJSONObject("data")
+            QuranPageValidation.pageNumber(page, data.getInt("number"))
             val ayahs = data.getJSONArray("ayahs")
+            check(ayahs.length() > 0) { "Quran service returned an empty page" }
             val output = StringBuilder()
             var lastSurah = -1
             for (i in 0 until ayahs.length()) {
@@ -78,7 +82,7 @@ object QuranPageSource {
                     output.append("۞  ").append(surah.getString("name")).append("  ۞\n")
                     lastSurah = surahNumber
                 }
-                output.append(ayah.getString("text"))
+                output.append(QuranPageValidation.ayahText(surahNumber, ayah.getInt("numberInSurah"), ayah.getString("text")))
                 output.append("  ﴿").append(ayah.getInt("numberInSurah")).append("﴾  ")
             }
             output.toString().trim()
