@@ -310,6 +310,9 @@ class MainActivity : Activity() {
         root.addView(controls)
         pageStatus = label("جارٍ تحميل صفحة المصحف…", 14f, gold, true)
         root.addView(pageStatus!!)
+        root.addView(button("إعادة تحميل صفحة المصحف", false) {
+            loadMushafPage(mushafPage)
+        })
         mushafWebView = WebView(this).apply {
             setBackgroundColor(Color.rgb(248, 243, 228))
             settings.javaScriptEnabled = true
@@ -1236,7 +1239,7 @@ class MainActivity : Activity() {
         root.addView(button("الرئيسية", false) { showHome() })
         root.post {
             Thread {
-                val result = PrayerTimesSource.load(city)
+                val result = PrayerTimesSource.load(city, country)
                 runOnUiThread {
                     if (currentPage != "qibla") return@runOnUiThread
                     if (result.isSuccess) {
