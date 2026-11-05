@@ -1,6 +1,7 @@
 package com.deeni.app
 
 import android.app.Activity
+import android.app.AlertDialog
 import android.os.Bundle
 import android.graphics.Color
 import android.graphics.Typeface
@@ -149,13 +150,50 @@ class MainActivity : Activity() {
             "habits" -> showHabits()
             "quiz" -> showQuiz()
             "azkar" -> showAzkar()
-            "quran" -> showInfo("القرآن الكريم", "هذه مساحة قسم القرآن. النسخة الحالية لا تتضمن بعد نص المصحف الكامل أو صفحات المصحف المعتمدة. يجري تجهيز مصدر قرآني موثوق قبل إدراجه حتى لا تظهر آية بخطأ.")
+            "quran" -> showQuran()
             "recite" -> showInfo("التسميع الذكي", "التسميع الصوتي الحقيقي يحتاج محرك تعرف على الكلام واختبارًا على قراءات متعددة. زر المايك وتحليل أخطاء الكلمات والتجويد غير جاهز في هذه النسخة.")
             "tajweed" -> showInfo("التجويد", "قسم التجويد قيد الإعداد. ستضاف الأحكام مع أمثلة موثوقة وتوضيح أن التقييم الآلي لا يغني عن شيخ متقن.")
             "seerah" -> showInfo("السيرة النبوية", "سيُبنى هذا القسم على روايات ومراجع معروفة، مع بيان مصدر كل حدث وتجنب القصص غير الثابتة.")
             "hadith" -> showInfo("الحديث الشريف", "ستعرض الأحاديث مع المصدر ودرجة الحديث وشرح مختصر. لم تُدرج بعد قاعدة بيانات حديثية في هذه النسخة.")
             "history" -> showInfo("الغزوات والتاريخ", "سيُرتب المحتوى زمنيًا مع مصادره، والتمييز بين الروايات الصحيحة والضعيفة.")
         }
+    }
+
+
+    private val reciters = listOf(
+        "عبد الرحمن السديس", "سعود الشريم", "علي جابر", "ماهر المعيقلي",
+        "ياسر الدوسري", "عبد الله عواد الجهني", "بندر بليلة", "صلاح البدير",
+        "علي الحذيفي", "أحمد العجمي", "سعد الغامدي", "مشاري العفاسي",
+        "محمد صديق المنشاوي", "محمود خليل الحصري", "عبد الباسط عبد الصمد",
+        "محمد أيوب", "إدريس أبكر", "رعد محمد الكردي", "فارس عباد", "هزاع البلوشي"
+    )
+
+    private fun showQuran() {
+        val scroll = setupPage()
+        heading("القرآن الكريم", "المصحف ومكتبة القرّاء")
+        val prefs = getSharedPreferences("deeni", MODE_PRIVATE)
+        var selected = prefs.getString("selected_reciter", "ماهر المعيقلي") ?: "ماهر المعيقلي"
+        val selectedView = text("القارئ المختار: $selected", 19f, green, true)
+        page.addView(selectedView)
+        addButton("🎧 اختيار القارئ", {
+            AlertDialog.Builder(this)
+                .setTitle("اختر قارئك")
+                .setSingleChoiceItems(reciters.toTypedArray(), reciters.indexOf(selected).coerceAtLeast(0)) { dialog, which ->
+                    selected = reciters[which]
+                    prefs.edit().putString("selected_reciter", selected).apply()
+                    selectedView.text = "القارئ المختار: $selected"
+                    dialog.dismiss()
+                }
+                .setNegativeButton("إغلاق", null)
+                .show()
+        })
+        addButton("🎙 التسميع بصوتي", {
+            showInfo("التسميع الذكي", "سيكون هذا الزر للتسجيل والتسميع بصوتك. محرك التعرف على التلاوة وتحليل الكلمات والتجويد لم يُدمج بعد، لذلك لن نعرض نتيجة وهمية.")
+        })
+        page.addView(text("طريقة العمل المطلوبة", 20f, ink, true))
+        page.addView(text("عند اكتمال المصحف وربط تسجيلات القارئ بالآيات، ستظهر الآية الحالية بلون مميز، ويتحرك التحديد تلقائيًا مع صوت القارئ إلى الآية التالية. اختيار القارئ محفوظ على جهازك.", 16f))
+        page.addView(text("ملاحظة مهمة: اختيار القارئ وحفظه أصبحا ضمن الواجهة، أما تشغيل التلاوة ومزامنة تظليل الآيات تلقائيًا فما زالا يحتاجان إلى مصدر صوتي موثوق وربط زمني دقيق، ولم يُفعّلا بعد.", 14f, Color.DKGRAY))
+        setContentView(scroll)
     }
 
     private fun showInfo(title: String, body: String) {
