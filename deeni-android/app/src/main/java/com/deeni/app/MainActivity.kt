@@ -386,7 +386,7 @@ class MainActivity : Activity() {
             layoutDirection = View.LAYOUT_DIRECTION_LTR
         }
         recitationControls.addView(
-            button("🎙 ابدأ التفريغ", true) { beginRecognition(status, live, mutableListOf()) },
+            button("🎙 ابدأ التفريغ", true) { beginRecognition(status, live) },
             LinearLayout.LayoutParams(0, -2, 1f)
         )
         recitationControls.addView(
@@ -533,7 +533,7 @@ class MainActivity : Activity() {
             }
             override fun onPartialResults(partialResults: Bundle?) {
                 val words = partialResults?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)?.firstOrNull().orEmpty()
-                renderComparison(words, live, ayahViews)
+                renderTranscript(words, live)
                 status.text = "متابعة مباشرة للنص الملتقط…"
             }
             override fun onEvent(eventType: Int, params: Bundle?) {}
