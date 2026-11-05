@@ -1456,5 +1456,4 @@ class MainActivity : Activity() {
         }
     }
 
-    override fun onStop() { stopRecognition(); stopQiblaSensor(); stopQuranAudio(); super.onStop() }
 }
