@@ -144,7 +144,19 @@ class MainActivity : Activity() {
         }
 
     private fun base(title: String, subtitle: String) {
+        // A screen change ends any active capture/playback and releases the old Mushaf view.
+        stopRecognition()
+        stopQuranAudio()
         stopQiblaSensor()
+        mushafWebView?.let { view ->
+            try {
+                view.stopLoading()
+                view.removeJavascriptInterface("DeeniMushaf")
+                view.loadUrl("about:blank")
+                view.destroy()
+            } catch (_: Exception) {}
+        }
+        mushafWebView = null
         root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(20, 20, 20, 22)
