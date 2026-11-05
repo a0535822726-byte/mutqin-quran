@@ -330,6 +330,43 @@ class MainActivity : Activity() {
         root.addView(label("التسميع الحالي استرشادي باستخدام التعرف الصوتي العام، وليس تصحيحًا متخصصًا للتلاوة أو التجويد.", 11f, muted))
     }
 
+    private fun showProgress() {
+        currentPage = "progress"
+        val prefs = getSharedPreferences("deeni", MODE_PRIVATE)
+        val savedAyahs = prefs.getStringSet("saved_ayahs", emptySet())?.size ?: 0
+        val bookmarks = prefs.getStringSet("mushaf_bookmarks", emptySet())?.size ?: 0
+        val page = prefs.getInt("mushaf_page", 1)
+        base("تقدمك", "ملخص تقدمك المحفوظ على هذا الجهاز")
+        card("موضع القراءة", "آخر صفحة محفوظة: " + page, "۞") { showQuran() }
+        card("الآيات المحفوظة", savedAyahs.toString() + " آية", "☆") { showSavedAyahs() }
+        card("علامات المصحف", bookmarks.toString() + " صفحة", "▤") { showMushafBookmarks() }
+        card("خطة الحفظ", "تابع مهامك اليومية", "✦") { showRevision() }
+        card("التسبيح", "العداد الحالي: " + tasbeeh, "◉") { showTasbeeh() }
+    }
+
+    private fun showMore() {
+        currentPage = "more"
+        base("المزيد", "مكتبة ديني وأدوات العبادة")
+        card("الحديث والسيرة", "أحاديث ومحطات من السيرة", "📜") { showIslamicLibrary() }
+        card("قصص الأنبياء", "قصص مختارة", "✧") { showProphetStories() }
+        card("قصص الصحابة", "سير مختارة", "☼") { showCompanionStories() }
+        card("الأذكار والأدعية", "أذكار مختارة", "◉") { showAdhkar() }
+        card("التفسير", "معاني الآيات", "📖") { showTafsir() }
+        card("التجويد", "أحكام التلاوة", "۞") { showTajweed() }
+        card("الفقه", "مبادئ عامة", "⚖") { showFiqhBasics() }
+        card("مواقيت الصلاة", "مواقيت حسب المدينة", "◷") { showPrayerTimes() }
+        card("القبلة", "اتجاه القبلة", "🧭") { showQibla() }
+        card("الأسماء الحسنى", "معانٍ موجزة", "✧") { showNames() }
+        card("الملاحظات", "فوائدك الخاصة", "✎") { showNotes() }
+        card("لعبة من سيربح المليون", "15 سؤالًا إسلاميًا", "★") { showMillionaire() }
+        card("تبديل المظهر", if (lightTheme) "الوضع الفاتح" else "الوضع الداكن", "⚙") {
+            lightTheme = !lightTheme
+            getSharedPreferences("deeni", MODE_PRIVATE).edit().putBoolean("light_theme", lightTheme).apply()
+            applyTheme()
+            showMore()
+        }
+    }
+
     private fun homeTile(title: String, subtitle: String, icon: String, action: () -> Unit) {
         val tile = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
