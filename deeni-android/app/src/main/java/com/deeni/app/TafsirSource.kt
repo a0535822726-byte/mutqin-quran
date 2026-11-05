@@ -38,6 +38,8 @@ object TafsirSource {
                 requestedAyah = ayah,
                 returnedSurah = returnedSurah,
                 returnedAyah = returnedAyah,
+                tafsirSurah = tafsir.getJSONObject("surah").getInt("number"),
+                tafsirAyah = tafsir.getInt("numberInSurah"),
                 surahName = quran.getJSONObject("surah").getString("name"),
                 ayahText = quran.getString("text"),
                 tafsirText = tafsir.getString("text")
