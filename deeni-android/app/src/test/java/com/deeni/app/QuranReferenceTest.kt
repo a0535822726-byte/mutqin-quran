@@ -7,6 +7,12 @@ import org.junit.Test
 
 class QuranReferenceTest {
     @Test
+    fun standardMushafHas114SurahsAnd6236Ayahs() {
+        assertEquals(114, QuranReference.surahCount())
+        assertEquals(6236, QuranReference.totalAyahCount())
+    }
+
+    @Test
     fun hasKnownBoundaryCounts() {
         assertEquals(7, QuranReference.ayahCount(1))
         assertEquals(286, QuranReference.ayahCount(2))
