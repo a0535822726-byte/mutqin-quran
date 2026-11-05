@@ -120,8 +120,8 @@ class MainActivity : Activity() {
         card("التسميع المباشر", "اقرأ وتابع الكلمات أثناء التسميع", "🎙") { showQuran(true) }
         card("مكتبة القراء", "اختر قارئك المفضل", "♫") { chooseReader() }
         card("الأذكار والتسبيح", "ذكر يومي وعداد محفوظ", "✧") { showTasbeeh() }
-        card("الحفظ والمراجعة", "خطتك ومواضع مراجعتك", "۞") { showComing("الحفظ والمراجعة") }
-        card("السيرة والحديث", "محتوى علمي بمصادره", "☾") { showComing("السيرة والحديث") }
+        card("الحفظ والمراجعة", "خطة يومية وسجل إنجاز محفوظ", "۞") { showRevision() }
+        card("السيرة والحديث", "مكتبة تعليمية ومصادر للقراءة", "☾") { showComing("السيرة والحديث") }\n        card("ملاحظاتي", "احفظ فوائدك وملاحظاتك محليًا", "✎") { showNotes() }\n        card("الأذكار", "أذكار مختارة مع عداد لكل ذكر", "۞") { showAdhkar() }
         root.addView(label("نسخة تطوير: المصحف المعروض حاليًا سورة الفاتحة كنموذج أولي، وبقية السور ومصادر الصوت قيد الإضافة.", 12f, muted))
     }
 
@@ -301,6 +301,95 @@ class MainActivity : Activity() {
         root.addView(button("إعادة العداد", false) {
             tasbeeh = 0; getSharedPreferences("deeni", MODE_PRIVATE).edit().putInt("tasbeeh", 0).apply()
             count.text = "عدد التسبيحات: 0"
+        })
+        root.addView(button("الرئيسية", false) { showHome() })
+    }
+
+    private fun showRevision() {
+        currentPage = "revision"
+        val prefs = getSharedPreferences("deeni", MODE_PRIVATE)
+        val items = listOf("مراجعة محفوظ الأمس", "حفظ مقدار جديد", "تثبيت آخر موضع", "تسميع ما تم حفظه")
+        base("الحفظ والمراجعة", "خطة متابعة يومية — يتم حفظ إنجازك على الجهاز")
+        val progress = label("", 16f, gold, true)
+        root.addView(progress)
+        fun refresh() {
+            val done = items.count { prefs.getBoolean("revision_" + it, false) }
+            progress.text = "إنجاز اليوم: $done من ${items.size}"
+        }
+        items.forEach { item ->
+            val check = CheckBox(this).apply {
+                text = item; textSize = 17f; setTextColor(cream)
+                buttonTintList = android.content.res.ColorStateList.valueOf(gold)
+                isChecked = prefs.getBoolean("revision_" + item, false)
+                setOnCheckedChangeListener { _, checked ->
+                    prefs.edit().putBoolean("revision_" + item, checked).apply()
+                    refresh()
+                }
+            }
+            root.addView(check)
+        }
+        refresh()
+        root.addView(button("تصفير خطة اليوم", false) {
+            prefs.edit().apply { items.forEach { remove("revision_" + it) } }.apply()
+            showRevision()
+        })
+        root.addView(button("الرئيسية", true) { showHome() })
+    }
+
+    private fun showNotes() {
+        currentPage = "notes"
+        val prefs = getSharedPreferences("deeni", MODE_PRIVATE)
+        base("ملاحظاتي", "فوائد وتدبر وملاحظات خاصة — تحفظ على هذا الجهاز")
+        val editor = EditText(this).apply {
+            setText(prefs.getString("personal_notes", ""))
+            hint = "اكتب فائدتك أو ملاحظتك هنا…"
+            textSize = 17f; setTextColor(cream); setHintTextColor(muted)
+            gravity = Gravity.TOP or Gravity.RIGHT
+            minLines = 8
+            setPadding(16, 16, 16, 16)
+            background = shape(panel, 18f)
+        }
+        root.addView(editor, LinearLayout.LayoutParams(-1, -2))
+        root.addView(space(10))
+        root.addView(button("حفظ الملاحظات", true) {
+            prefs.edit().putString("personal_notes", editor.text.toString()).apply()
+            Toast.makeText(this, "تم حفظ ملاحظاتك على الجهاز", Toast.LENGTH_SHORT).show()
+        })
+        root.addView(button("مسح الملاحظات", false) {
+            editor.setText("")
+            prefs.edit().remove("personal_notes").apply()
+        })
+        root.addView(button("الرئيسية", false) { showHome() })
+    }
+
+    private fun showAdhkar() {
+        currentPage = "adhkar"
+        val entries = listOf(
+            "سُبْحَانَ اللَّهِ وَبِحَمْدِهِ" to 100,
+            "أَسْتَغْفِرُ اللَّهَ وَأَتُوبُ إِلَيْهِ" to 100,
+            "لَا إِلَهَ إِلَّا اللَّهُ وَحْدَهُ لَا شَرِيكَ لَهُ" to 100,
+            "سُبْحَانَ اللَّهِ" to 33,
+            "الْحَمْدُ لِلَّهِ" to 33,
+            "اللَّهُ أَكْبَرُ" to 34
+        )
+        val prefs = getSharedPreferences("deeni", MODE_PRIVATE)
+        base("الأذكار والتسبيح", "اختر الذكر واضغط على عداده — الأعداد أهداف اختيارية وليست إلزامًا")
+        entries.forEachIndexed { index, entry ->
+            val count = label("", 18f, gold, true).apply { gravity = Gravity.CENTER }
+            fun refreshCount() { count.text = "${prefs.getInt("dhikr_$index", 0)} / ${entry.second}" }
+            root.addView(label(entry.first, 19f, cream, true))
+            root.addView(count)
+            root.addView(button("＋ تسبيحة", true) {
+                val next = prefs.getInt("dhikr_$index", 0) + 1
+                prefs.edit().putInt("dhikr_$index", next).apply()
+                refreshCount()
+            })
+            root.addView(space(7))
+            refreshCount()
+        }
+        root.addView(button("تصفير عدادات الأذكار", false) {
+            prefs.edit().apply { entries.indices.forEach { remove("dhikr_$it") } }.apply()
+            showAdhkar()
         })
         root.addView(button("الرئيسية", false) { showHome() })
     }
