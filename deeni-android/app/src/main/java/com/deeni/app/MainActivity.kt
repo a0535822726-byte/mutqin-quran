@@ -621,27 +621,29 @@ class MainActivity : Activity() {
     }
 
     private fun showMicOptions() {
-        val options = arrayOf("التسميع — اقرأ الآية المحددة", "استمع للقارئ — اختر السورة والتلاوة", "اختبار التلاوة — جرّب قراءتك وقارن النص")
+        val options = arrayOf(
+            "التسميع — ابدأ القراءة مباشرة",
+            "استمع للقارئ — اختر السورة والتلاوة",
+            "اختبار التلاوة — اقرأ ثم راجع النتيجة الاسترشادية"
+        )
         android.app.AlertDialog.Builder(this)
-            .setTitle("ماذا تريد أن تفعل؟")
+            .setTitle("اختر وضع الميكروفون")
             .setItems(options) { _, which ->
                 when (which) {
                     0 -> {
-                        if (selectedAyah == null) {
-                            Toast.makeText(this, "حدد آية من المصحف أولًا.", Toast.LENGTH_SHORT).show()
-                        } else {
-                            recitationStatusView?.text = "وضع التسميع: اقرأ الآية المحددة"
-                            root.post { recitationStatusView?.let { status -> recitationTextView?.let { live -> beginRecognition(status, live) } } }
-                        }
+                        recitationStatusView?.text = "وضع التسميع: أستمع إلى قراءتك"
+                        recitationTextView?.text = "ابدأ القراءة؛ لا يلزم تحديد آية مسبقًا. يمكنك تحديد آية لاحقًا للمقارنة النصية."
+                        root.post { recitationStatusView?.let { status -> recitationTextView?.let { live -> beginRecognition(status, live) } } }
                     }
                     1 -> showSurahPicker()
                     2 -> {
-                        if (selectedAyah == null) {
-                            Toast.makeText(this, "حدد آية من المصحف أولًا لتبدأ الاختبار.", Toast.LENGTH_SHORT).show()
+                        recitationStatusView?.text = if (selectedAyah == null) {
+                            "اختبار استرشادي: اقرأ ما تريد، وحدد آية إذا رغبت بالمقارنة"
                         } else {
-                            recitationStatusView?.text = "وضع الاختبار: اقرأ الآية ثم راجع المقارنة النصية"
-                            root.post { recitationStatusView?.let { status -> recitationTextView?.let { live -> beginRecognition(status, live) } } }
+                            "اختبار استرشادي للآية المحددة"
                         }
+                        recitationTextView?.text = "اقرأ بوضوح؛ ستظهر الكلمات التي التقطها الهاتف. المقارنة مع نص الآية اختيارية وليست تصحيحًا للتجويد."
+                        root.post { recitationStatusView?.let { status -> recitationTextView?.let { live -> beginRecognition(status, live) } } }
                     }
                 }
             }
@@ -797,7 +799,7 @@ class MainActivity : Activity() {
         if (spoken.isBlank()) return
         val reference = selectedAyahText
         if (reference.isNullOrBlank()) {
-            live.text = "النص الذي التقطه الجهاز:\n$spoken\n\nاختر آية من المصحف أولًا لتفعيل المقارنة النصية الاسترشادية. هذا ليس تصحيحًا قرآنيًا."
+            live.text = "النص الذي التقطه الجهاز:\n$spoken\n\nيمكنك تحديد آية من المصحف لعرض مقارنة نصية استرشادية، أو متابعة القراءة دون تحديد آية. هذا التفريغ ليس تصحيحًا قرآنيًا أو حكمًا على صحة التلاوة."
             return
         }
         val comparison = QuranTextComparison.compare(reference, spoken)
