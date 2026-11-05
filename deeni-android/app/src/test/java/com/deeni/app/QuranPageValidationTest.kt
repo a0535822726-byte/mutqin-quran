@@ -35,6 +35,21 @@ class QuranPageValidationTest {
         QuranPageValidation.ayahText(1, 8, "نص")
     }
 
+    @Test
+    fun acceptsMatchingAyahIdentity() {
+        assertEquals("نص", QuranPageValidation.ayahResponse(2, 255, 2, 255, "نص"))
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun rejectsDifferentReturnedSurah() {
+        QuranPageValidation.ayahResponse(2, 255, 3, 255, "نص")
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun rejectsDifferentReturnedAyah() {
+        QuranPageValidation.ayahResponse(2, 255, 2, 256, "نص")
+    }
+
     @Test(expected = IllegalArgumentException::class)
     fun rejectsEmptyAyahText() {
         QuranPageValidation.ayahText(1, 1, "  ")
