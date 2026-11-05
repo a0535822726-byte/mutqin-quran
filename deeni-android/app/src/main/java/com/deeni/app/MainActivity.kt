@@ -24,6 +24,9 @@ import android.view.View
 import android.webkit.JavascriptInterface
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import android.util.Base64
+import java.net.HttpURLConnection
+import java.net.URL
 import android.media.AudioAttributes
 import android.media.MediaPlayer
 import android.os.Handler
@@ -651,8 +654,11 @@ class MainActivity : Activity() {
             .show()
     }
 
-    private fun mushafHtml(page: Int): String {
+    private fun mushafHtml(page: Int, svgMarkup: String): String {
         val safePage = page.coerceIn(1, 604)
+        val cleanSvg = svgMarkup.replace(Regex("<\\\\?xml[^>]*\\\\?>", RegexOption.IGNORE_CASE), "")
+            .replace(Regex("<!DOCTYPE[^>]*>", RegexOption.IGNORE_CASE), "")
+        val encodedSvg = Base64.encodeToString(cleanSvg.toByteArray(Charsets.UTF_8), Base64.NO_WRAP)
         return """
             <!doctype html>
             <html lang="ar" dir="rtl">
@@ -668,18 +674,15 @@ class MainActivity : Activity() {
             <body>
               <div id="page"></div>
               <script>
-                (async function(){
+                (function(){
                   const host=document.getElementById('page');
-                  const number=String($safePage).padStart(3,'0');
-                  const url='https://raw.githubusercontent.com/quran-ws/quran-svg/main/mushafs/hafs/kfqc/svg/'+number+'.svg';
                   try{
-                    const response=await fetch(url);
-                    if(!response.ok) throw new Error('HTTP '+response.status);
-                    const source=await response.text();
+                    const binary=atob('$encodedSvg');
+                    const bytes=Uint8Array.from(binary,function(c){return c.charCodeAt(0);});
+                    const source=new TextDecoder('utf-8').decode(bytes);
                     const parsed=new DOMParser().parseFromString(source,'image/svg+xml');
                     const svg=parsed.documentElement;
-                    if(svg.querySelector('parsererror')) throw new Error('SVG parse error');
-                    // Treat downloaded SVG as data: remove executable and embedded content before mounting.
+                    if(!svg || svg.localName!=='svg' || parsed.querySelector('parsererror')) throw new Error('SVG parse error');
                     svg.querySelectorAll('script,foreignObject,iframe,object,embed,audio,video').forEach(function(node){node.remove();});
                     [svg].concat(Array.from(svg.querySelectorAll('*'))).forEach(function(node){
                       Array.from(node.attributes||[]).forEach(function(attr){
@@ -691,34 +694,25 @@ class MainActivity : Activity() {
                     svg.querySelectorAll('style').forEach(function(node){
                       node.textContent=node.textContent.replace(/@import[^;]*;?/gi,'').replace(/url\\s*\\([^)]*\\)/gi,'');
                     });
-                    svg.removeAttribute('width');
-                    svg.removeAttribute('height');
                     host.replaceChildren(document.importNode(svg,true));
                     const mounted=host.querySelector('svg');
                     mounted.style.width='100%';
                     mounted.style.height='auto';
-                    try{
-                      const content=mounted.querySelector('#content')||mounted;
-                      const box=content.getBBox();
-                      if(box.width>0&&box.height>0){
-                        const pad=5;
-                        mounted.setAttribute('viewBox',(box.x-pad)+' '+(box.y-pad)+' '+(box.width+pad*2)+' '+(box.height+pad*2));
-                      }
-                    }catch(ignore){}
+                    mounted.setAttribute('preserveAspectRatio','xMidYMid meet');
                     mounted.querySelectorAll('.ayahPolygon').forEach(function(path){
                       path.style.pointerEvents='all';
                       path.addEventListener('click',function(){
                         mounted.querySelectorAll('.ayahPolygon').forEach(function(p){p.setAttribute('fill-opacity','0');});
                         path.setAttribute('fill','#d6b76f');
                         path.setAttribute('fill-opacity','0.38');
-                        const s=Number(path.getAttribute('surah'));
-                        const a=Number(path.getAttribute('ayah'));
-                        if(s>0&&a>0&&window.DeeniMushaf) window.DeeniMushaf.onAyahSelected(s,a);
+                        const surah=Number(path.getAttribute('surah'));
+                        const ayah=Number(path.getAttribute('ayah'));
+                        if(surah>0&&ayah>0&&window.DeeniMushaf) window.DeeniMushaf.onAyahSelected(surah,ayah);
                       });
                     });
-                    window.highlightAyah=function(s,a){
+                    window.highlightAyah=function(surah,ayah){
                       const found=Array.from(mounted.querySelectorAll('.ayahPolygon')).find(function(p){
-                        return Number(p.getAttribute('surah'))===s && Number(p.getAttribute('ayah'))===a;
+                        return Number(p.getAttribute('surah'))===surah && Number(p.getAttribute('ayah'))===ayah;
                       });
                       if(!found) return false;
                       mounted.querySelectorAll('.ayahPolygon').forEach(function(p){p.setAttribute('fill-opacity','0');});
@@ -728,7 +722,7 @@ class MainActivity : Activity() {
                     };
                     if(window.DeeniMushaf) window.DeeniMushaf.onPageReady();
                   }catch(error){
-                    host.innerHTML='<p style="font:18px sans-serif;color:#704b20;text-align:center;padding:24px">تعذر تحميل صفحة المصحف. تحقق من الإنترنت ثم أعد المحاولة من التطبيق.</p>';
+                    host.innerHTML='<p style="font:18px sans-serif;color:#704b20;text-align:center;padding:24px">تعذر عرض صفحة المصحف. أعد المحاولة بعد التحقق من الاتصال.</p>';
                     if(window.DeeniMushaf) window.DeeniMushaf.onPageError();
                   }
                 })();
@@ -744,7 +738,46 @@ class MainActivity : Activity() {
         pageStatus?.text = "جارٍ تحميل صفحة المصحف $page من 604…"
         ayahStatus?.text = "اضغط على موضع آية في الصفحة لعرض نصها."
         getSharedPreferences("deeni", MODE_PRIVATE).edit().putInt("mushaf_page", page).apply()
-        mushafWebView?.loadDataWithBaseURL("https://raw.githubusercontent.com/", mushafHtml(page), "text/html", "UTF-8", null)
+        Thread {
+            val result = runCatching {
+                val url = URL("https://raw.githubusercontent.com/quran-ws/quran-svg/main/mushafs/hafs/kfqc/svg/" + page.toString().padStart(3, '0') + ".svg")
+                val connection = (url.openConnection() as HttpURLConnection).apply {
+                    requestMethod = "GET"
+                    connectTimeout = 15000
+                    readTimeout = 20000
+                    setRequestProperty("User-Agent", "DeeniAndroid/1.2")
+                }
+                try {
+                    if (connection.responseCode != HttpURLConnection.HTTP_OK) {
+                        throw IllegalStateException("HTTP " + connection.responseCode)
+                    }
+                    connection.inputStream.bufferedReader(Charsets.UTF_8).use { it.readText() }
+                } finally {
+                    connection.disconnect()
+                }
+            }
+            runOnUiThread {
+                if (currentPage != "quran" || mushafPage != page) return@runOnUiThread
+                if (result.isSuccess) {
+                    mushafWebView?.loadDataWithBaseURL(
+                        "https://appassets.androidplatform.net/",
+                        mushafHtml(page, result.getOrThrow()),
+                        "text/html",
+                        "UTF-8",
+                        null
+                    )
+                } else {
+                    pageStatus?.text = "تعذر تحميل صفحة المصحف $page. تحقق من الإنترنت ثم اضغط إعادة المحاولة."
+                    mushafWebView?.loadDataWithBaseURL(
+                        "https://appassets.androidplatform.net/",
+                        "<html dir='rtl'><body style='background:#f8f3e4;color:#704b20;text-align:center;font:18px sans-serif;padding:24px'>تعذر تحميل صفحة المصحف.<br>ارجع واضغط رقم الصفحة لإعادة المحاولة.</body></html>",
+                        "text/html",
+                        "UTF-8",
+                        null
+                    )
+                }
+            }
+        }.start()
     }
 
     private fun beginRecognition(status: TextView, live: TextView) {
