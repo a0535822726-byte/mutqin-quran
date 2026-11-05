@@ -29,6 +29,15 @@ class QuranReferenceTest {
     }
 
     @Test
+    fun validatesLastAyahAndRejectsNextNumberForEverySurah() {
+        for (surah in 1..QuranReference.surahCount()) {
+            val lastAyah = QuranReference.ayahCount(surah)
+            assertTrue("Expected last ayah to be valid for surah $surah", QuranReference.isValid(surah, lastAyah))
+            assertFalse("Expected ayah after end to be invalid for surah $surah", QuranReference.isValid(surah, lastAyah + 1))
+        }
+    }
+
+    @Test
     fun rejectsAyahBeyondSpecificSurahCount() {
         assertFalse(QuranReference.isValid(1, 8))
         assertFalse(QuranReference.isValid(108, 4))
