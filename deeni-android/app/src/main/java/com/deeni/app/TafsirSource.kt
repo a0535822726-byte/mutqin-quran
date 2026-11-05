@@ -28,7 +28,7 @@ object TafsirSource {
             check(code in 200..299) { "Tafsir service returned HTTP $code" }
             val envelope = JSONObject(body)
             check(envelope.optString("code") == "200") { "Tafsir service returned an error" }
-            val editions = envelope.getJSONObject("data").getJSONArray("editions")
+            val editions = envelope.getJSONArray("data")
             check(editions.length() >= 2) { "Tafsir editions are unavailable" }
             val quran = editions.getJSONObject(0)
             val tafsir = editions.getJSONObject(1)
