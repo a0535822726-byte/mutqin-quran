@@ -74,6 +74,7 @@ class MainActivity : Activity() {
     private var playbackStatus: TextView? = null
     private var recitationStatusView: TextView? = null
     private var recitationTextView: TextView? = null
+    private var pendingRecognitionAfterPermission = false
     private var pendingHighlight: Pair<Int, Int>? = null
     private var selectedAyah: Pair<Int, Int>? = null
     private var selectedAyahText: String? = null
@@ -716,9 +717,11 @@ class MainActivity : Activity() {
             status.text = "التعرف الصوتي غير متاح على هذا الجهاز"; return
         }
         if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+            pendingRecognitionAfterPermission = true
             requestPermissions(arrayOf(Manifest.permission.RECORD_AUDIO), 77)
-            status.text = "اسمح باستخدام الميكروفون ثم اضغط ابدأ"; return
+            status.text = "بانتظار إذن الميكروفون…"; return
         }
+        pendingRecognitionAfterPermission = false
         stopRecognition()
         recognizer = SpeechRecognizer.createSpeechRecognizer(this)
         val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
@@ -1853,8 +1856,13 @@ class MainActivity : Activity() {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode != 77) return
         if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-            Toast.makeText(this, "تم السماح بالميكروفون. اضغط ابدأ التسميع.", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, "تم السماح بالميكروفون.", Toast.LENGTH_SHORT).show()
+            if (pendingRecognitionAfterPermission && recitationStatusView != null && recitationTextView != null) {
+                pendingRecognitionAfterPermission = false
+                recitationStatusView?.post { beginRecognition(recitationStatusView!!, recitationTextView!!) }
+            }
         } else {
+            pendingRecognitionAfterPermission = false
             Toast.makeText(this, "لم يُسمح بالميكروفون. يمكنك قراءة المصحف دون التسميع، وتفعيل الإذن لاحقًا من إعدادات التطبيق.", Toast.LENGTH_LONG).show()
         }
     }
