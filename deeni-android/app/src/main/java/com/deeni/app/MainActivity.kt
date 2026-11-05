@@ -73,6 +73,7 @@ class MainActivity : Activity() {
     private var playbackSurah = 1
     private var playbackStatus: TextView? = null
     private var pendingHighlight: Pair<Int, Int>? = null
+    private var selectedAyah: Pair<Int, Int>? = null
     private var selectedReader = "ماهر المعيقلي"
     private var tasbeeh = 0
     private val readers = listOf("ماهر المعيقلي", "عبد الرحمن السديس", "ياسر الدوسري", "مشاري العفاسي", "محمود خليل الحصري", "محمد صديق المنشاوي", "عبد الباسط عبد الصمد", "سعد الغامدي", "أحمد العجمي", "علي جابر")
@@ -272,6 +273,8 @@ class MainActivity : Activity() {
     }
 
     private fun showSelectedAyah(surah: Int, ayah: Int) {
+        if (!QuranReference.isValid(surah, ayah)) return
+        selectedAyah = surah to ayah
         ayahStatus?.text = "جارٍ تحميل الآية $surah:$ayah…"
         Thread {
             val result = QuranPageSource.loadAyahDetails(surah, ayah)
@@ -336,6 +339,18 @@ class MainActivity : Activity() {
         ayahStatus!!.background = shape(panel, 16f)
         ayahStatus!!.setPadding(14, 14, 14, 14)
         root.addView(ayahStatus!!)
+        root.addView(button("حفظ الآية المحددة في قائمتي", false) {
+            val selected = selectedAyah
+            if (selected == null) {
+                Toast.makeText(this, "اضغط على آية في صفحة المصحف أولًا.", Toast.LENGTH_SHORT).show()
+            } else {
+                val prefs = getSharedPreferences("deeni", MODE_PRIVATE)
+                val saved = prefs.getStringSet("saved_ayahs", emptySet())?.toMutableSet() ?: mutableSetOf()
+                saved.add("\${selected.first}:\${selected.second}")
+                prefs.edit().putStringSet("saved_ayahs", saved).apply()
+                Toast.makeText(this, "تم حفظ الآية \${selected.first}:\${selected.second}", Toast.LENGTH_SHORT).show()
+            }
+        })
         root.addView(space(10))
         root.addView(button("حفظ هذه الصفحة كموضع متابعة", true) {
             getSharedPreferences("deeni", MODE_PRIVATE).edit().putInt("mushaf_page", mushafPage).apply()
