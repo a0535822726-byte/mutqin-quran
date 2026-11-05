@@ -508,6 +508,15 @@ class MainActivity : Activity() {
             addJavascriptInterface(MushafBridge(), "DeeniMushaf")
             webViewClient = object : WebViewClient() {
                 override fun shouldOverrideUrlLoading(view: WebView?, url: String?): Boolean = true
+                override fun onReceivedError(
+                    view: WebView?,
+                    request: android.webkit.WebResourceRequest?,
+                    error: android.webkit.WebResourceError?
+                ) {
+                    if (request?.isForMainFrame == true) {
+                        pageStatus?.text = "تعذر فتح صفحة المصحف. تحقق من الإنترنت ثم أعد المحاولة."
+                    }
+                }
             }
         }
         val mushafFrame = LinearLayout(this).apply {
@@ -733,7 +742,7 @@ class MainActivity : Activity() {
         pageStatus?.text = "جارٍ تحميل صفحة المصحف $page من 604…"
         ayahStatus?.text = "اضغط على موضع آية في الصفحة لعرض نصها."
         getSharedPreferences("deeni", MODE_PRIVATE).edit().putInt("mushaf_page", page).apply()
-        mushafWebView?.loadDataWithBaseURL("https://appassets.androidplatform.net/", mushafHtml(page), "text/html", "UTF-8", null)
+        mushafWebView?.loadDataWithBaseURL("https://raw.githubusercontent.com/", mushafHtml(page), "text/html", "UTF-8", null)
     }
 
     private fun beginRecognition(status: TextView, live: TextView) {
