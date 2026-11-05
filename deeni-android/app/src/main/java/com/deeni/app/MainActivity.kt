@@ -647,7 +647,13 @@ class MainActivity : Activity() {
             Thread {
                 val timings = ReciterSource.loadTimings(surah, timingId)
                 if (timings.isSuccess) {
-                    runOnUiThread { timingRows = timings.getOrThrow() }
+                    val loadedTimings = timings.getOrThrow()
+                    runOnUiThread {
+                        // Ignore a late response if the user has already started another surah.
+                        if (quranPlayer === player && playbackSurah == surah && currentPage == "quran") {
+                            timingRows = loadedTimings
+                        }
+                    }
                 }
             }.start()
         }
