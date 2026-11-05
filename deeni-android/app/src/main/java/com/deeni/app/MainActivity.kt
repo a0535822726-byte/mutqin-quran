@@ -1124,6 +1124,16 @@ class MainActivity : Activity() {
         val prefs = getSharedPreferences("deeni", MODE_PRIVATE)
         val savedCity = prefs.getString("prayer_city", null)
         val initialCity = if (savedCity.isNullOrBlank() || savedCity == "أبو عريش") "Abu Arish" else savedCity
+        val country = EditText(this).apply {
+            setText(prefs.getString("prayer_country", "Saudi Arabia"))
+            hint = "اسم الدولة بالإنجليزية، مثال: Saudi Arabia"
+            textSize = 16f
+            setTextColor(cream)
+            setHintTextColor(muted)
+            gravity = Gravity.RIGHT
+            setPadding(14, 14, 14, 14)
+            background = shape(panel, 16f)
+        }
         val city = EditText(this).apply {
             setText(initialCity)
             hint = "اسم المدينة بالإنجليزية، مثال: Abu Arish"
@@ -1134,21 +1144,27 @@ class MainActivity : Activity() {
             setPadding(14, 14, 14, 14)
             background = shape(panel, 16f)
         }
+        root.addView(label("الدولة", 15f, gold, true))
+        root.addView(country)
         root.addView(label("المدينة", 15f, gold, true))
         root.addView(city)
-        root.addView(label("اكتب اسم المدينة بالإنجليزية لضمان تعرف خدمة المواقيت عليها. تُستخدم طريقة أم القرى للحساب، وقد تختلف دقائق قليلة عن تقويم المسجد المحلي.", 12f, muted))
+        root.addView(label("اكتب اسم الدولة والمدينة بالإنجليزية. تُستخدم طريقة أم القرى للحساب، وقد تختلف دقائق قليلة عن تقويم المسجد المحلي.", 12f, muted))
         val result = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         root.addView(result)
         root.addView(button("عرض مواقيت اليوم", true) {
             val name = city.text.toString().trim()
-            if (name.isBlank()) {
-                Toast.makeText(this, "اكتب اسم المدينة أولًا", Toast.LENGTH_SHORT).show()
+            val countryName = country.text.toString().trim()
+            if (name.isBlank() || countryName.isBlank()) {
+                Toast.makeText(this, "اكتب الدولة والمدينة أولًا", Toast.LENGTH_SHORT).show()
             } else {
-                getSharedPreferences("deeni", MODE_PRIVATE).edit().putString("prayer_city", name).apply()
+                getSharedPreferences("deeni", MODE_PRIVATE).edit()
+                    .putString("prayer_city", name)
+                    .putString("prayer_country", countryName)
+                    .apply()
                 result.removeAllViews()
                 result.addView(label("جارٍ جلب المواقيت…", 15f, gold))
                 Thread {
-                    val response = PrayerTimesSource.load(name)
+                    val response = PrayerTimesSource.load(name, countryName)
                     runOnUiThread {
                         if (currentPage != "prayer_times") return@runOnUiThread
                         result.removeAllViews()
@@ -1189,7 +1205,8 @@ class MainActivity : Activity() {
         val prefs = getSharedPreferences("deeni", MODE_PRIVATE)
         val storedCity = prefs.getString("prayer_city", null)
         val city = if (storedCity.isNullOrBlank() || storedCity == "أبو عريش") "Abu Arish" else storedCity
-        root.addView(label("المدينة المستخدمة: ${city}", 14f, muted))
+        val country = prefs.getString("prayer_country", "Saudi Arabia") ?: "Saudi Arabia"
+        root.addView(label("الموقع المستخدم: ${city}، ${country}", 14f, muted))
         val status = label("جارٍ تحديد اتجاه القبلة…", 15f, gold, true)
         root.addView(status)
         val compass = QiblaCompassView(this).apply {
@@ -1200,7 +1217,7 @@ class MainActivity : Activity() {
         root.addView(button("تحديث اتجاه القبلة", true) {
             status.text = "جارٍ الحساب…"
             Thread {
-                val result = PrayerTimesSource.load(city)
+                val result = PrayerTimesSource.load(city, country)
                 runOnUiThread {
                     if (currentPage != "qibla") return@runOnUiThread
                     if (result.isSuccess) {
