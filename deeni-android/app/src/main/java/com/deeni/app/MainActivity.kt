@@ -118,6 +118,7 @@ class MainActivity : Activity() {
         root.addView(space(18))
         root.addView(label("اكتشف ديني", 20f, cream, true))
         card("التسميع المباشر", "اقرأ وتابع الكلمات أثناء التسميع", "🎙") { showQuran(true) }
+        card("البحث في القرآن", "ابحث عن كلمة أو عبارة في الآيات", "⌕") { showQuranSearch() }
         card("مكتبة القراء", "اختر قارئك المفضل", "♫") { chooseReader() }
         card("الأذكار والتسبيح", "ذكر يومي وعداد محفوظ", "✧") { showTasbeeh() }
         card("الحفظ والمراجعة", "خطة يومية وسجل إنجاز محفوظ", "۞") { showRevision() }
@@ -534,6 +535,54 @@ class MainActivity : Activity() {
         }
         root.addView(label("هذه قائمة مختارة من عشرين اسمًا وليست عرضًا كاملًا للأسماء التسعة والتسعين، ومعاني الأسماء يُرجع فيها إلى كتب العقيدة والتفسير المعتمدة.", 12f, muted))
         root.addView(button("الرئيسية", true) { showHome() })
+    }
+
+    private fun showQuranSearch() {
+        currentPage = "quran_search"
+        base("البحث في القرآن", "ابحث في نص القرآن بالرسم العثماني أو بالكلمات المعتادة")
+        val query = EditText(this).apply {
+            hint = "اكتب كلمة أو عبارة للبحث"
+            textSize = 17f
+            setTextColor(cream)
+            setHintTextColor(muted)
+            gravity = Gravity.RIGHT
+            setPadding(16, 14, 16, 14)
+            background = shape(panel, 16f)
+        }
+        root.addView(query)
+        val status = label("أدخل كلمة ثم اضغط بحث", 13f, muted)
+        root.addView(status)
+        val results = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        root.addView(results)
+        root.addView(button("بحث", true) {
+            val term = query.text.toString().trim()
+            if (term.length < 2) {
+                status.text = "اكتب حرفين على الأقل"
+            } else {
+                status.text = "جارٍ البحث…"
+                results.removeAllViews()
+                Thread {
+                    val found = QuranSearchSource.search(term)
+                    runOnUiThread {
+                        if (currentPage != "quran_search") return@runOnUiThread
+                        if (found.isSuccess) {
+                            val items = found.getOrThrow()
+                            status.text = "عدد النتائج المعروضة: ${items.size}"
+                            if (items.isEmpty()) results.addView(label("لم يتم العثور على نتائج.", 15f, muted))
+                            items.forEach { item ->
+                                results.addView(label("سورة ${item.first} • الآية ${item.second}", 13f, gold, true))
+                                results.addView(label(item.third, 18f, cream))
+                                results.addView(space(9))
+                            }
+                        } else {
+                            status.text = "تعذر البحث. تحقق من الإنترنت وحاول مجددًا."
+                        }
+                    }
+                }.start()
+            }
+        })
+        root.addView(button("فتح المصحف", false) { showQuran() })
+        root.addView(button("الرئيسية", false) { showHome() })
     }
 
     private fun showComing(title: String) {
