@@ -255,7 +255,6 @@ class MainActivity : Activity() {
         mushafPage = getSharedPreferences("deeni", MODE_PRIVATE).getInt("mushaf_page", 1).coerceIn(1, 604)
         base("المصحف الشريف", "مصحف المدينة النبوية • رواية حفص • صفحات مطبوعة")
         root.addView(label("القارئ المحدد: $selectedReader", 14f, gold, true))
-        root.addView(button("تغيير القارئ", false) { chooseReader() })
         root.addView(label("صفحات مصحف المدينة النبوية الصادر عن مجمع الملك فهد لطباعة المصحف الشريف. يلزم الاتصال بالإنترنت لعرض الصفحة.", 12f, muted))
         val controls = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER; layoutDirection = View.LAYOUT_DIRECTION_LTR }
         controls.addView(button("السابق", false) { loadMushafPage(mushafPage - 1) }, LinearLayout.LayoutParams(0, -2, 1f))
@@ -334,7 +333,20 @@ class MainActivity : Activity() {
         root.addView(status)
         val live = TextView(this).apply { text = "النص الملتقط يظهر هنا"; textSize = 17f; setTextColor(cream); background = shape(panel, 16f); setPadding(14, 14, 14, 14) }
         root.addView(live)
-        root.addView(button("ابدأ التفريغ الصوتي", true) { beginRecognition(status, live, mutableListOf()) })
+        val recitationControls = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER
+            layoutDirection = View.LAYOUT_DIRECTION_LTR
+        }
+        recitationControls.addView(
+            button("🎙 ابدأ", true) { beginRecognition(status, live, mutableListOf()) },
+            LinearLayout.LayoutParams(0, -2, 1f)
+        )
+        recitationControls.addView(
+            button("اختيار القارئ", false) { chooseReader() },
+            LinearLayout.LayoutParams(0, -2, 1f)
+        )
+        root.addView(recitationControls)
         root.addView(button("إيقاف التسميع", false) { stopRecognition(); status.text = "تم إيقاف التسميع" })
         root.addView(button("العودة للرئيسية", false) { stopRecognition(); showHome() })
         loadMushafPage(mushafPage)
