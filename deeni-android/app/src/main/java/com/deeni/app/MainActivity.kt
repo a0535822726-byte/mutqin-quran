@@ -642,6 +642,9 @@ class MainActivity : Activity() {
         playbackSpeed = 1.0f
         timingRows = emptyList()
         playbackStatus?.text = "جارٍ تجهيز التلاوة…"
+        val url = server.trimEnd('/') + "/" + surah.toString().padStart(3, '0') + ".mp3"
+        val player = MediaPlayer()
+        quranPlayer = player
         val timingId = prefs.getInt("timing_read_id", -1)
         if (timingId > 0) {
             Thread {
@@ -657,9 +660,6 @@ class MainActivity : Activity() {
                 }
             }.start()
         }
-        val url = server.trimEnd('/') + "/" + surah.toString().padStart(3, '0') + ".mp3"
-        val player = MediaPlayer()
-        quranPlayer = player
         player.setAudioAttributes(
             AudioAttributes.Builder()
                 .setUsage(AudioAttributes.USAGE_MEDIA)
