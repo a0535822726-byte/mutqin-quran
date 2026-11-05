@@ -524,20 +524,18 @@ class MainActivity : Activity() {
         root.addView(ayahStatus!!)
 
         root.addView(space(8))
-        val primaryActions = LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL
-            gravity = Gravity.CENTER
-            layoutDirection = View.LAYOUT_DIRECTION_LTR
-        }
-        primaryActions.addView(button("🎙  ابدأ التسميع", true) {
-            if (selectedAyah == null) {
-                Toast.makeText(this, "حدد آية من المصحف أولًا.", Toast.LENGTH_SHORT).show()
-            } else {
-                root.post { beginRecognition(recitationStatusView!!, recitationTextView!!) }
+        val micMenuButton = button("🎙\nاضغط مطولًا للخيارات", true) {
+            showMicOptions()
+        }.apply {
+            textSize = 18f
+            minHeight = 76
+            setOnLongClickListener {
+                showMicOptions()
+                true
             }
-        }, LinearLayout.LayoutParams(0, -2, 1.2f))
-        primaryActions.addView(button("♫  استمع", false) { showSurahPicker() }, LinearLayout.LayoutParams(0, -2, 0.8f))
-        root.addView(primaryActions)
+            contentDescription = "خيارات الميكروفون: تسميع أو استماع للقارئ أو اختبار"
+        }
+        root.addView(micMenuButton)
 
         root.addView(space(6))
         val utilityActions = LinearLayout(this).apply {
@@ -579,9 +577,6 @@ class MainActivity : Activity() {
             setPadding(14, 14, 14, 14)
         }
         root.addView(recitationTextView!!)
-        root.addView(button("تشغيل الميكروفون", true) {
-            beginRecognition(recitationStatusView!!, recitationTextView!!)
-        })
         root.addView(button("إيقاف الميكروفون", false) {
             stopRecognition()
             recitationStatusView?.text = "تم إيقاف الميكروفون"
@@ -614,6 +609,35 @@ class MainActivity : Activity() {
         root.addView(label("ملاحظة الخصوصية: لا يحفظ التطبيق تسجيلًا صوتيًا. قد تستخدم خدمة التعرف الصوتي في الهاتف مزودًا خارجيًا لمعالجة الكلام.", 11f, muted))
         loadMushafPage(mushafPage)
         if (startMic) root.post { beginRecognition(recitationStatusView!!, recitationTextView!!) }
+    }
+
+    private fun showMicOptions() {
+        val options = arrayOf("التسميع — اقرأ الآية المحددة", "استمع للقارئ — اختر السورة والتلاوة", "اختبار التلاوة — جرّب قراءتك وقارن النص")
+        android.app.AlertDialog.Builder(this)
+            .setTitle("ماذا تريد أن تفعل؟")
+            .setItems(options) { _, which ->
+                when (which) {
+                    0 -> {
+                        if (selectedAyah == null) {
+                            Toast.makeText(this, "حدد آية من المصحف أولًا.", Toast.LENGTH_SHORT).show()
+                        } else {
+                            recitationStatusView?.text = "وضع التسميع: اقرأ الآية المحددة"
+                            root.post { recitationStatusView?.let { status -> recitationTextView?.let { live -> beginRecognition(status, live) } } }
+                        }
+                    }
+                    1 -> showSurahPicker()
+                    2 -> {
+                        if (selectedAyah == null) {
+                            Toast.makeText(this, "حدد آية من المصحف أولًا لتبدأ الاختبار.", Toast.LENGTH_SHORT).show()
+                        } else {
+                            recitationStatusView?.text = "وضع الاختبار: اقرأ الآية ثم راجع المقارنة النصية"
+                            root.post { recitationStatusView?.let { status -> recitationTextView?.let { live -> beginRecognition(status, live) } } }
+                        }
+                    }
+                }
+            }
+            .setNegativeButton("إلغاء", null)
+            .show()
     }
 
     private fun mushafHtml(page: Int): String {
