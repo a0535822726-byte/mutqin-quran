@@ -948,7 +948,7 @@ class MainActivity : Activity() {
                             items.forEach { item ->
                                 results.addView(label("سورة ${item.surahName} • الآية ${item.ayahNumber}", 13f, gold, true))
                                 results.addView(label(item.text, 18f, cream))
-                                root.addView(space(9))
+                                results.addView(space(9))
                                 results.addView(button("حفظ الآية في المفضلة ☆", false) {
                                     val prefs = getSharedPreferences("deeni", MODE_PRIVATE)
                                     val saved = prefs.getStringSet("saved_ayahs", emptySet())?.toMutableSet() ?: mutableSetOf()
