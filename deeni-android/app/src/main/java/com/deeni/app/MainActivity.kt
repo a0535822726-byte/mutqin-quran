@@ -656,7 +656,7 @@ class MainActivity : Activity() {
 
     private fun mushafHtml(page: Int, svgMarkup: String): String {
         val safePage = page.coerceIn(1, 604)
-        val cleanSvg = svgMarkup.replace(Regex("<\\\\?xml[^>]*\\\\?>", RegexOption.IGNORE_CASE), "")
+        val cleanSvg = svgMarkup.replace(Regex("<\\?xml[^>]*\\?>", RegexOption.IGNORE_CASE), "")
             .replace(Regex("<!DOCTYPE[^>]*>", RegexOption.IGNORE_CASE), "")
         val encodedSvg = Base64.encodeToString(cleanSvg.toByteArray(Charsets.UTF_8), Base64.NO_WRAP)
         return """
