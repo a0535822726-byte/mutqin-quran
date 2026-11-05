@@ -46,6 +46,8 @@ class MainActivity : Activity() {
     private val audioHandler = Handler(Looper.getMainLooper())
     private var timingRows: List<AyahTiming> = emptyList()
     private var currentTimedAyah = -1
+    private var repeatTiming: AyahTiming? = null
+    private var playbackSpeed = 1.0f
     private var playbackSurah = 1
     private var playbackStatus: TextView? = null
     private var pendingHighlight: Pair<Int, Int>? = null
@@ -268,6 +270,24 @@ class MainActivity : Activity() {
         root.addView(playbackStatus!!)
         root.addView(button("إيقاف مؤقت / متابعة", false) { toggleQuranPlayback() })
         root.addView(button("إيقاف التلاوة", false) { stopQuranAudio() })
+        root.addView(button("تكرار الآية الحالية: تشغيل / إيقاف", false) {
+            val timing = timingRows.firstOrNull { it.ayah == currentTimedAyah }
+            if (timing == null) {
+                Toast.makeText(this, "ابدأ تلاوة تتوفر لها بيانات توقيت الآيات وانتظر ظهور الآية الحالية.", Toast.LENGTH_LONG).show()
+            } else {
+                repeatTiming = if (repeatTiming == null) timing else null
+                playbackStatus?.text = if (repeatTiming != null) "تكرار الآية ${timing.ayah} مفعّل" else "تم إيقاف تكرار الآية"
+            }
+        })
+        root.addView(button("سرعة التلاوة: 0.8× / 1× / 1.2×", false) {
+            playbackSpeed = when (playbackSpeed) { 1.0f -> 0.8f; 0.8f -> 1.2f; else -> 1.0f }
+            try {
+                quranPlayer?.playbackParams = quranPlayer?.playbackParams?.setSpeed(playbackSpeed)
+                playbackStatus?.text = "سرعة التلاوة ${playbackSpeed}×"
+            } catch (_: Exception) {
+                Toast.makeText(this, "تعذر تغيير السرعة في هذا الجهاز.", Toast.LENGTH_SHORT).show()
+            }
+        })
         root.addView(space(14))
         root.addView(label("التسميع الصوتي", 20f, cream, true))
         root.addView(label("التعرف الصوتي العام قد يخطئ في ألفاظ القرآن؛ هذه الأداة ليست محركًا متخصصًا ولا تصحح التجويد.", 13f, muted))
@@ -507,6 +527,8 @@ class MainActivity : Activity() {
         stopQuranAudio()
         playbackSurah = surah
         currentTimedAyah = -1
+        repeatTiming = null
+        playbackSpeed = 1.0f
         timingRows = emptyList()
         playbackStatus?.text = "جارٍ تجهيز التلاوة…"
         val timingId = prefs.getInt("timing_read_id", -1)
@@ -558,7 +580,14 @@ class MainActivity : Activity() {
         override fun run() {
             val player = quranPlayer ?: return
             if (player.isPlaying && timingRows.isNotEmpty()) {
-                val position = try { player.currentPosition } catch (_: Exception) { -1 }
+                var position = try { player.currentPosition } catch (_: Exception) { -1 }
+                val repeat = repeatTiming
+                if (repeat != null && position >= repeat.endMs) {
+                    try {
+                        player.seekTo(repeat.startMs)
+                        position = repeat.startMs
+                    } catch (_: Exception) {}
+                }
                 val active = timingRows.firstOrNull { position >= it.startMs && position < it.endMs }
                 if (active != null && active.ayah != currentTimedAyah) {
                     currentTimedAyah = active.ayah
@@ -598,6 +627,8 @@ class MainActivity : Activity() {
         try { player?.release() } catch (_: Exception) {}
         timingRows = emptyList()
         currentTimedAyah = -1
+        repeatTiming = null
+        playbackSpeed = 1.0f
         playbackStatus?.text = "التلاوة متوقفة"
     }
 
