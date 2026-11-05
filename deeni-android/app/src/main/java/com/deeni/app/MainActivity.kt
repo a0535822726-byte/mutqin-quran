@@ -241,7 +241,7 @@ class MainActivity : Activity() {
             override fun onResults(results: Bundle?) {
                 val words = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)?.firstOrNull().orEmpty()
                 renderComparison(words, live, ayahViews)
-                status.text = "انتهت جولة الالتقاط — راجع الكلمات المظللة"
+                status.text = "انتهت جولة الالتقاط — راجع النص المسموع بنفسك"
             }
             override fun onPartialResults(partialResults: Bundle?) {
                 val words = partialResults?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)?.firstOrNull().orEmpty()
@@ -256,25 +256,7 @@ class MainActivity : Activity() {
 
     private fun renderComparison(spoken: String, live: TextView, ayahViews: List<TextView>) {
         if (spoken.isBlank()) return
-        live.text = "ما التقطه الجهاز:\n$spoken"
-        val got = normalize(spoken).split(" ").filter { it.isNotBlank() }
-        val expected = expectedWords.map { normalize(it) }
-        var matched = 0
-        for (word in got) if (matched < expected.size && word == expected[matched]) matched++
-        val correctRatio = if (got.isEmpty()) 0 else (matched * 100 / got.size)
-        live.append("\n\nتطابق تقريبي: $correctRatio٪")
-        ayahViews.forEachIndexed { index, view ->
-            val rangeStart = fatiha.take(index).sumOf { normalize(it).split(" ").size }
-            val rangeEnd = rangeStart + normalize(fatiha[index]).split(" ").size
-            val color = when {
-                matched >= rangeEnd -> Color.rgb(37, 125, 76)
-                matched > rangeStart -> Color.rgb(168, 112, 25)
-                else -> Color.rgb(53, 49, 40)
-            }
-            val span = SpannableString("﴿${index + 1}﴾  ${fatiha[index]}")
-            span.setSpan(ForegroundColorSpan(color), 0, span.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
-            view.text = span
-        }
+        live.text = "النص الذي التقطه الجهاز:\n$spoken\n\nتنبيه: هذا تفريغ آلي للصوت فقط، وليس تصحيحًا قرآنيًا موثوقًا ولا يحدد موضع الخطأ."
     }
 
     private fun stopRecognition() {
