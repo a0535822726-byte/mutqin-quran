@@ -139,6 +139,7 @@ class MainActivity : Activity() {
         root.addView(label("اكتشف ديني", 20f, cream, true))
         card("التسميع المباشر", "اقرأ وتابع الكلمات أثناء التسميع", "🎙") { showQuran(true) }
         card("البحث في القرآن", "ابحث عن كلمة أو عبارة في الآيات", "⌕") { showQuranSearch() }
+        card("الآيات المحفوظة", "اجمع الآيات التي تريد الرجوع إليها", "☆") { showSavedAyahs() }
         card("التفسير الميسر", "اقرأ تفسير الآية مع نصها القرآني", "📖") { showTafsir() }
         card("مكتبة القراء", "اختر قارئك المفضل", "♫") { chooseReader() }
         card("الأذكار والتسبيح", "ذكر يومي وعداد محفوظ", "✧") { showTasbeeh() }
@@ -886,9 +887,21 @@ class MainActivity : Activity() {
                             status.text = "عدد النتائج المعروضة: ${items.size}"
                             if (items.isEmpty()) results.addView(label("لم يتم العثور على نتائج.", 15f, muted))
                             items.forEach { item ->
-                                results.addView(label("سورة ${item.first} • الآية ${item.second}", 13f, gold, true))
-                                results.addView(label(item.third, 18f, cream))
-                                results.addView(space(9))
+                                results.addView(label("سورة ${item.surahName} • الآية ${item.ayahNumber}", 13f, gold, true))
+                                results.addView(label(item.text, 18f, cream))
+                                root.addView(space(9))
+                                results.addView(button("حفظ الآية في المفضلة ☆", false) {
+                                    val prefs = getSharedPreferences("deeni", MODE_PRIVATE)
+                                    val saved = prefs.getStringSet("saved_ayahs", emptySet())?.toMutableSet() ?: mutableSetOf()
+                                    saved.add("${item.surahNumber}:${item.ayahNumber}")
+                                    prefs.edit().putStringSet("saved_ayahs", saved).apply()
+                                    Toast.makeText(this, "تم حفظ الآية", Toast.LENGTH_SHORT).show()
+                                })
+                                results.addView(button("فتح الآية في المصحف", false) {
+                                    showQuran()
+                                    root.post { showSelectedAyah(item.surahNumber, item.ayahNumber) }
+                                })
+                                results.addView(space(12))
                             }
                         } else {
                             status.text = "تعذر البحث. تحقق من الإنترنت وحاول مجددًا."
@@ -898,6 +911,39 @@ class MainActivity : Activity() {
             }
         })
         root.addView(button("فتح المصحف", false) { showQuran() })
+        root.addView(button("الرئيسية", false) { showHome() })
+    }
+
+    private fun showSavedAyahs() {
+        currentPage = "saved_ayahs"
+        base("الآيات المحفوظة", "آيات أضفتها من نتائج البحث لتعود إليها بسهولة")
+        val prefs = getSharedPreferences("deeni", MODE_PRIVATE)
+        val saved = prefs.getStringSet("saved_ayahs", emptySet())?.toList()
+            ?.mapNotNull { value ->
+                val parts = value.split(":")
+                val surah = parts.getOrNull(0)?.toIntOrNull()
+                val ayah = parts.getOrNull(1)?.toIntOrNull()
+                if (surah != null && ayah != null && surah in 1..114 && ayah > 0) surah to ayah else null
+            }?.sortedWith(compareBy<Pair<Int, Int>> { it.first }.thenBy { it.second }) ?: emptyList()
+        if (saved.isEmpty()) {
+            root.addView(label("لا توجد آيات محفوظة. ابحث في القرآن ثم اضغط حفظ الآية.", 15f, muted))
+        } else {
+            saved.forEach { item ->
+                root.addView(label("السورة رقم ${item.first} • الآية ${item.second}", 16f, gold, true))
+                root.addView(button("فتح الآية في المصحف", true) {
+                    showQuran()
+                    root.post { showSelectedAyah(item.first, item.second) }
+                })
+                root.addView(button("إزالة من الآيات المحفوظة", false) {
+                    val updated = prefs.getStringSet("saved_ayahs", emptySet())?.toMutableSet() ?: mutableSetOf()
+                    updated.remove("${item.first}:${item.second}")
+                    prefs.edit().putStringSet("saved_ayahs", updated).apply()
+                    showSavedAyahs()
+                })
+                root.addView(space(8))
+            }
+        }
+        root.addView(button("البحث في القرآن", false) { showQuranSearch() })
         root.addView(button("الرئيسية", false) { showHome() })
     }
 
