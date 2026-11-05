@@ -282,7 +282,7 @@ class MainActivity : Activity() {
         root.addView(button("سرعة التلاوة: 0.8× / 1× / 1.2×", false) {
             playbackSpeed = when (playbackSpeed) { 1.0f -> 0.8f; 0.8f -> 1.2f; else -> 1.0f }
             try {
-                quranPlayer?.playbackParams = quranPlayer?.playbackParams?.setSpeed(playbackSpeed)
+                quranPlayer?.let { player -> player.playbackParams = player.playbackParams.setSpeed(playbackSpeed) }
                 playbackStatus?.text = "سرعة التلاوة ${playbackSpeed}×"
             } catch (_: Exception) {
                 Toast.makeText(this, "تعذر تغيير السرعة في هذا الجهاز.", Toast.LENGTH_SHORT).show()
