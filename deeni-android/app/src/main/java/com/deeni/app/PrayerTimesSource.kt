@@ -13,9 +13,11 @@ data class PrayerTimesResult(
 )
 
 object PrayerTimesSource {
-    fun load(city: String): Result<PrayerTimesResult> = runCatching {
+    fun load(city: String, country: String = "Saudi Arabia"): Result<PrayerTimesResult> = runCatching {
+        require(city.isNotBlank()) { "City is required" }
+        require(country.isNotBlank()) { "Country is required" }
         val encodedCity = URLEncoder.encode(city, "UTF-8")
-        val encodedCountry = URLEncoder.encode("Saudi Arabia", "UTF-8")
+        val encodedCountry = URLEncoder.encode(country, "UTF-8")
         val endpoint = "https://api.aladhan.com/v1/timingsByCity?city=$encodedCity&country=$encodedCountry&method=4"
         val connection = URL(endpoint).openConnection() as HttpURLConnection
         connection.requestMethod = "GET"
