@@ -397,7 +397,7 @@ class MainActivity : Activity() {
         root.addView(button("إيقاف الميكروفون", false) { stopRecognition(); status.text = "تم إيقاف الميكروفون" })
         root.addView(button("العودة للرئيسية", false) { stopRecognition(); showHome() })
         loadMushafPage(mushafPage)
-        if (startMic) root.post { beginRecognition(status, live, mutableListOf()) }
+        if (startMic) root.post { beginRecognition(status, live) }
     }
 
     private fun mushafHtml(page: Int): String {
