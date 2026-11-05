@@ -570,7 +570,7 @@ class MainActivity : Activity() {
         val comparison = QuranTextComparison.compare(reference, spoken)
         val missing = comparison.missingFromTranscript.take(8).joinToString("، ").ifBlank { "لا توجد" }
         val extra = comparison.extraInTranscript.take(8).joinToString("، ").ifBlank { "لا توجد" }
-        val matched = "\${comparison.matchedWordCount} من \${comparison.expectedWordCount}"
+        val matched = "${comparison.matchedWordCount} من ${comparison.expectedWordCount}"
         live.text = "النص الذي التقطه الجهاز:\n$spoken\n\nمقارنة نصية مبدئية للآية المحددة:\nكلمات لم تظهر في النص الملتقط: $missing\nكلمات إضافية في النص الملتقط: $extra\nالكلمات المتطابقة بالترتيب: $matched\n\nتنبيه مهم: قد يخطئ محرك التعرف الصوتي في سماع القرآن؛ هذه فروق بين نصين فقط، وليست حكمًا بأنك أخطأت في التلاوة، ولا تقيس التجويد أو مخارج الحروف."
     }
 
