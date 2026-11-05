@@ -1286,16 +1286,8 @@ class MainActivity : Activity() {
         }
     }
 
-    private fun qiblaBearing(latitude: Double, longitude: Double): Double {
-        val kaabaLat = Math.toRadians(21.4225)
-        val kaabaLon = Math.toRadians(39.8262)
-        val userLat = Math.toRadians(latitude)
-        val deltaLon = kaabaLon - Math.toRadians(longitude)
-        val y = kotlin.math.sin(deltaLon)
-        val x = kotlin.math.cos(userLat) * kotlin.math.tan(kaabaLat) -
-            kotlin.math.sin(userLat) * kotlin.math.cos(deltaLon)
-        return (Math.toDegrees(kotlin.math.atan2(y, x)) + 360.0) % 360.0
-    }
+    private fun qiblaBearing(latitude: Double, longitude: Double): Double =
+        QiblaMath.bearing(latitude, longitude)
 
     private fun startQiblaSensor(compass: QiblaCompassView, bearing: Float, latitude: Double, longitude: Double) {
         stopQiblaSensor()
