@@ -22,6 +22,7 @@ object QuranTextComparison {
     fun normalize(text: String): List<String> {
         val cleaned = text
             .replace('ـ', ' ')
+            .replace('\u0670', 'ا')
             .replace(tashkeel, "")
             .replace(punctuation, " ")
             .replace('أ', 'ا')
