@@ -15,8 +15,14 @@ class QiblaCompassView(context: Context) : View(context) {
     private val cream = Color.rgb(246, 241, 226)
     private val muted = Color.rgb(174, 194, 184)
 
+    init {
+        contentDescription = "بوصلة اتجاه القبلة. يتم تحديث اتجاه السهم بحسب اتجاه الهاتف."
+        importantForAccessibility = IMPORTANT_FOR_ACCESSIBILITY_YES
+    }
+
     fun setDirection(qiblaBearing: Float, deviceAzimuth: Float) {
-        relativeAngle = qiblaBearing - deviceAzimuth
+        relativeAngle = ((qiblaBearing - deviceAzimuth + 540f) % 360f) - 180f
+        contentDescription = "اتجاه القبلة ${"%.0f".format(qiblaBearing)} درجة من الشمال، والسهم يوضح اتجاهها على الشاشة."
         invalidate()
     }
 
