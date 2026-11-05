@@ -23,6 +23,10 @@ import android.view.View
 import android.webkit.JavascriptInterface
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import android.media.AudioAttributes
+import android.media.MediaPlayer
+import android.os.Handler
+import android.os.Looper
 import android.widget.*
 import java.util.Locale
 
@@ -38,6 +42,13 @@ class MainActivity : Activity() {
     private var currentPage = "home"
     private var qiblaSensorManager: SensorManager? = null
     private var qiblaSensorListener: SensorEventListener? = null
+    private var quranPlayer: MediaPlayer? = null
+    private val audioHandler = Handler(Looper.getMainLooper())
+    private var timingRows: List<AyahTiming> = emptyList()
+    private var currentTimedAyah = -1
+    private var playbackSurah = 1
+    private var playbackStatus: TextView? = null
+    private var pendingHighlight: Pair<Int, Int>? = null
     private var selectedReader = "ماهر المعيقلي"
     private var tasbeeh = 0
     private val readers = listOf("ماهر المعيقلي", "عبد الرحمن السديس", "ياسر الدوسري", "مشاري العفاسي", "محمود خليل الحصري", "محمد صديق المنشاوي", "عبد الباسط عبد الصمد", "سعد الغامدي", "أحمد العجمي", "علي جابر")
@@ -154,18 +165,40 @@ class MainActivity : Activity() {
             if (surah <= 0 || ayah <= 0) return
             runOnUiThread { showSelectedAyah(surah, ayah) }
         }
+        @JavascriptInterface
+        fun onPageReady() {
+            runOnUiThread {
+                pageStatus?.text = "صفحة $mushafPage من 604 • مصحف المدينة النبوية"
+                val pending = pendingHighlight
+                if (pending != null) {
+                    pendingHighlight = null
+                    highlightMushafAyah(pending.first, pending.second)
+                }
+            }
+        }
+    }
+
+    private fun highlightMushafAyah(surah: Int, ayah: Int) {
+        mushafWebView?.evaluateJavascript("window.highlightAyah && window.highlightAyah($surah,$ayah)", null)
     }
 
     private fun showSelectedAyah(surah: Int, ayah: Int) {
         ayahStatus?.text = "جارٍ تحميل الآية $surah:$ayah…"
         Thread {
-            val result = QuranPageSource.loadAyah(surah, ayah)
+            val result = QuranPageSource.loadAyahDetails(surah, ayah)
             runOnUiThread {
                 if (currentPage != "quran") return@runOnUiThread
-                ayahStatus?.text = if (result.isSuccess) {
-                    "الآية $surah:$ayah\n" + result.getOrThrow()
+                if (result.isSuccess) {
+                    val (text, page) = result.getOrThrow()
+                    ayahStatus?.text = "الآية $surah:$ayah\n$text"
+                    if (page != mushafPage) {
+                        pendingHighlight = surah to ayah
+                        loadMushafPage(page)
+                    } else {
+                        highlightMushafAyah(surah, ayah)
+                    }
                 } else {
-                    "تعذر تحميل نص الآية المحددة."
+                    ayahStatus?.text = "تعذر تحميل نص الآية المحددة."
                 }
             }
         }.start()
@@ -217,6 +250,11 @@ class MainActivity : Activity() {
             getSharedPreferences("deeni", MODE_PRIVATE).edit().putInt("mushaf_page", mushafPage).apply()
             Toast.makeText(this, "تم حفظ الصفحة $mushafPage", Toast.LENGTH_SHORT).show()
         })
+        root.addView(button("اختيار سورة وتشغيل تلاوة القارئ", true) { showSurahPicker() })
+        playbackStatus = label("التلاوة متوقفة", 13f, muted)
+        root.addView(playbackStatus!!)
+        root.addView(button("إيقاف مؤقت / متابعة", false) { toggleQuranPlayback() })
+        root.addView(button("إيقاف التلاوة", false) { stopQuranAudio() })
         root.addView(space(14))
         root.addView(label("التسميع الصوتي", 20f, cream, true))
         root.addView(label("التعرف الصوتي العام قد يخطئ في ألفاظ القرآن؛ هذه الأداة ليست محركًا متخصصًا ولا تصحح التجويد.", 13f, muted))
@@ -284,6 +322,17 @@ class MainActivity : Activity() {
                         if(s>0&&a>0&&window.DeeniMushaf) window.DeeniMushaf.onAyahSelected(s,a);
                       });
                     });
+                    window.highlightAyah=function(s,a){
+                      const found=Array.from(mounted.querySelectorAll('.ayahPolygon')).find(function(p){
+                        return Number(p.getAttribute('surah'))===s && Number(p.getAttribute('ayah'))===a;
+                      });
+                      if(!found) return false;
+                      mounted.querySelectorAll('.ayahPolygon').forEach(function(p){p.setAttribute('fill-opacity','0');});
+                      found.setAttribute('fill','#d6b76f');
+                      found.setAttribute('fill-opacity','0.38');
+                      return true;
+                    };
+                    if(window.DeeniMushaf) window.DeeniMushaf.onPageReady();
                   }catch(error){
                     host.innerHTML='<p style="font:18px sans-serif;color:#704b20;text-align:center;padding:24px">تعذر تحميل صفحة المصحف. تحقق من الإنترنت ثم أعد المحاولة من التطبيق.</p>';
                   }
@@ -365,15 +414,175 @@ class MainActivity : Activity() {
     }
 
     private fun chooseReader() {
-        android.app.AlertDialog.Builder(this)
-            .setTitle("اختر القارئ")
-            .setSingleChoiceItems(readers.toTypedArray(), readers.indexOf(selectedReader).coerceAtLeast(0)) { dialog, which ->
-                selectedReader = readers[which]
-                getSharedPreferences("deeni", MODE_PRIVATE).edit().putString("reader", selectedReader).apply()
-                dialog.dismiss()
-                if (currentPage == "quran") showQuran()
+        Toast.makeText(this, "جارٍ تحميل قائمة القراء والتلاوات المتاحة…", Toast.LENGTH_SHORT).show()
+        Thread {
+            val result = ReciterSource.loadReciters()
+            runOnUiThread {
+                if (result.isFailure) {
+                    Toast.makeText(this, "تعذر تحميل القراء. تحقق من الإنترنت.", Toast.LENGTH_LONG).show()
+                    return@runOnUiThread
+                }
+                val reads = result.getOrThrow()
+                if (reads.isEmpty()) {
+                    Toast.makeText(this, "لا توجد تلاوات متاحة حاليًا.", Toast.LENGTH_LONG).show()
+                    return@runOnUiThread
+                }
+                val names = reads.map { "${it.reciterName} — ${it.readName}" }.toTypedArray()
+                android.app.AlertDialog.Builder(this)
+                    .setTitle("اختر القارئ والرواية")
+                    .setItems(names) { dialog, which ->
+                        val selected = reads[which]
+                        selectedReader = selected.reciterName
+                        getSharedPreferences("deeni", MODE_PRIVATE).edit()
+                            .putString("reader", selectedReader)
+                            .putString("audio_server", selected.audioServer)
+                            .putString("audio_surahs", selected.surahIds.joinToString(","))
+                            .putInt("audio_read_id", selected.readId)
+                            .putInt("timing_read_id", selected.timingReadId ?: -1)
+                            .putString("read_name", selected.readName)
+                            .apply()
+                        dialog.dismiss()
+                        if (currentPage == "quran") showQuran()
+                    }
+                    .setNegativeButton("إغلاق", null)
+                    .show()
             }
-            .setNegativeButton("إغلاق", null).show()
+        }.start()
+    }
+
+    private fun showSurahPicker() {
+        val prefs = getSharedPreferences("deeni", MODE_PRIVATE)
+        val server = prefs.getString("audio_server", null)
+        if (server.isNullOrBlank()) {
+            Toast.makeText(this, "اختر القارئ أولًا", Toast.LENGTH_SHORT).show()
+            chooseReader()
+            return
+        }
+        val input = EditText(this).apply {
+            inputType = android.text.InputType.TYPE_CLASS_NUMBER
+            setText("1")
+            hint = "رقم السورة من 1 إلى 114"
+            gravity = Gravity.CENTER
+        }
+        android.app.AlertDialog.Builder(this)
+            .setTitle("تشغيل سورة")
+            .setMessage("اكتب رقم السورة من 1 إلى 114")
+            .setView(input)
+            .setPositiveButton("تشغيل") { _, _ ->
+                val surah = input.text.toString().toIntOrNull()
+                if (surah == null || surah !in 1..114) {
+                    Toast.makeText(this, "رقم السورة غير صحيح", Toast.LENGTH_SHORT).show()
+                } else {
+                    playQuranSurah(surah)
+                }
+            }
+            .setNegativeButton("إلغاء", null)
+            .show()
+    }
+
+    private fun playQuranSurah(surah: Int) {
+        val prefs = getSharedPreferences("deeni", MODE_PRIVATE)
+        val server = prefs.getString("audio_server", null) ?: return
+        val supported = prefs.getString("audio_surahs", "")!!.split(',').mapNotNull { it.toIntOrNull() }.toSet()
+        if (surah !in supported) {
+            Toast.makeText(this, "هذه السورة غير متاحة بهذه التلاوة.", Toast.LENGTH_LONG).show()
+            return
+        }
+        stopQuranAudio()
+        playbackSurah = surah
+        currentTimedAyah = -1
+        timingRows = emptyList()
+        playbackStatus?.text = "جارٍ تجهيز التلاوة…"
+        val timingId = prefs.getInt("timing_read_id", -1)
+        if (timingId > 0) {
+            Thread {
+                val timings = ReciterSource.loadTimings(surah, timingId)
+                if (timings.isSuccess) {
+                    runOnUiThread { timingRows = timings.getOrThrow() }
+                }
+            }.start()
+        }
+        val url = server.trimEnd('/') + "/" + surah.toString().padStart(3, '0') + ".mp3"
+        val player = MediaPlayer()
+        quranPlayer = player
+        player.setAudioAttributes(
+            AudioAttributes.Builder()
+                .setUsage(AudioAttributes.USAGE_MEDIA)
+                .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
+                .build()
+        )
+        player.setOnPreparedListener {
+            if (quranPlayer !== player) return@setOnPreparedListener
+            player.start()
+            playbackStatus?.text = "تُتلى السورة رقم $surah — ${selectedReader}"
+            audioHandler.removeCallbacks(audioTicker)
+            audioHandler.post(audioTicker)
+        }
+        player.setOnCompletionListener {
+            if (quranPlayer === player) {
+                playbackStatus?.text = "انتهت التلاوة"
+                audioHandler.removeCallbacks(audioTicker)
+            }
+        }
+        player.setOnErrorListener { _, _, _ ->
+            playbackStatus?.text = "تعذر تشغيل الصوت؛ تحقق من الاتصال أو اختر تلاوة أخرى."
+            stopQuranAudio()
+            true
+        }
+        try {
+            player.setDataSource(url)
+            player.prepareAsync()
+        } catch (_: Exception) {
+            playbackStatus?.text = "تعذر فتح ملف التلاوة."
+            stopQuranAudio()
+        }
+    }
+
+    private val audioTicker = object : Runnable {
+        override fun run() {
+            val player = quranPlayer ?: return
+            if (player.isPlaying && timingRows.isNotEmpty()) {
+                val position = try { player.currentPosition } catch (_: Exception) { -1 }
+                val active = timingRows.firstOrNull { position >= it.startMs && position < it.endMs }
+                if (active != null && active.ayah != currentTimedAyah) {
+                    currentTimedAyah = active.ayah
+                    showSelectedAyah(playbackSurah, active.ayah)
+                }
+            }
+            if (quranPlayer === player && player.isPlaying) audioHandler.postDelayed(this, 250)
+        }
+    }
+
+    private fun toggleQuranPlayback() {
+        val player = quranPlayer
+        if (player == null) {
+            showSurahPicker()
+            return
+        }
+        try {
+            if (player.isPlaying) {
+                player.pause()
+                playbackStatus?.text = "التلاوة متوقفة مؤقتًا"
+                audioHandler.removeCallbacks(audioTicker)
+            } else {
+                player.start()
+                playbackStatus?.text = "استئناف التلاوة"
+                audioHandler.post(audioTicker)
+            }
+        } catch (_: Exception) {
+            playbackStatus?.text = "تعذر التحكم في التلاوة."
+        }
+    }
+
+    private fun stopQuranAudio() {
+        audioHandler.removeCallbacks(audioTicker)
+        val player = quranPlayer
+        quranPlayer = null
+        try { player?.stop() } catch (_: Exception) {}
+        try { player?.release() } catch (_: Exception) {}
+        timingRows = emptyList()
+        currentTimedAyah = -1
+        playbackStatus?.text = "التلاوة متوقفة"
     }
 
     private fun showTasbeeh() {
@@ -931,5 +1140,5 @@ class MainActivity : Activity() {
         }
     }
 
-    override fun onStop() { stopRecognition(); stopQiblaSensor(); super.onStop() }
+    override fun onStop() { stopRecognition(); stopQiblaSensor(); stopQuranAudio(); super.onStop() }
 }
