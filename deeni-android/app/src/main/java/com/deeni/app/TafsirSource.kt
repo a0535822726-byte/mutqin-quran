@@ -13,8 +13,7 @@ data class TafsirResult(
 
 object TafsirSource {
     fun load(surah: Int, ayah: Int): Result<TafsirResult> = runCatching {
-        require(surah in 1..114) { "Surah number must be between 1 and 114" }
-        require(ayah in 1..286) { "Ayah number is out of range" }
+        QuranReference.requireValid(surah, ayah)
         val endpoint = "https://api.alquran.cloud/v1/ayah/$surah:$ayah/editions/quran-uthmani,ar.muyassar"
         val connection = URL(endpoint).openConnection() as HttpURLConnection
         connection.requestMethod = "GET"
@@ -32,11 +31,16 @@ object TafsirSource {
             check(editions.length() >= 2) { "Tafsir editions are unavailable" }
             val quran = editions.getJSONObject(0)
             val tafsir = editions.getJSONObject(1)
-            TafsirResult(
-                quran.getJSONObject("surah").getString("name"),
-                quran.getInt("numberInSurah"),
-                quran.getString("text"),
-                tafsir.getString("text")
+            val returnedSurah = quran.getJSONObject("surah").getInt("number")
+            val returnedAyah = quran.getInt("numberInSurah")
+            TafsirValidation.result(
+                requestedSurah = surah,
+                requestedAyah = ayah,
+                returnedSurah = returnedSurah,
+                returnedAyah = returnedAyah,
+                surahName = quran.getJSONObject("surah").getString("name"),
+                ayahText = quran.getString("text"),
+                tafsirText = tafsir.getString("text")
             )
         } finally {
             connection.disconnect()
