@@ -728,33 +728,43 @@ class MainActivity : Activity() {
 
     private fun showAdhkar() {
         currentPage = "adhkar"
+        data class Dhikr(val category: String, val text: String, val target: Int, val source: String)
         val entries = listOf(
-            "سُبْحَانَ اللَّهِ وَبِحَمْدِهِ" to 100,
-            "أَسْتَغْفِرُ اللَّهَ وَأَتُوبُ إِلَيْهِ" to 100,
-            "لَا إِلَهَ إِلَّا اللَّهُ وَحْدَهُ لَا شَرِيكَ لَهُ" to 100,
-            "سُبْحَانَ اللَّهِ" to 33,
-            "الْحَمْدُ لِلَّهِ" to 33,
-            "اللَّهُ أَكْبَرُ" to 34
+            Dhikr("أذكار الصباح والمساء", "بِسْمِ اللَّهِ الَّذِي لَا يَضُرُّ مَعَ اسْمِهِ شَيْءٌ فِي الْأَرْضِ وَلَا فِي السَّمَاءِ وَهُوَ السَّمِيعُ الْعَلِيمُ", 3, "أبو داود 5088؛ الترمذي 3388"),
+            Dhikr("أذكار الصباح والمساء", "رَضِيتُ بِاللَّهِ رَبًّا، وَبِالْإِسْلَامِ دِينًا، وَبِمُحَمَّدٍ ﷺ نَبِيًّا", 3, "أبو داود 5072؛ الترمذي 3389"),
+            Dhikr("أذكار الصباح والمساء", "سَيِّدُ الِاسْتِغْفَارِ: اللَّهُمَّ أَنْتَ رَبِّي لَا إِلَهَ إِلَّا أَنْتَ، خَلَقْتَنِي وَأَنَا عَبْدُكَ، وَأَنَا عَلَى عَهْدِكَ وَوَعْدِكَ مَا اسْتَطَعْتُ، أَعُوذُ بِكَ مِنْ شَرِّ مَا صَنَعْتُ، أَبُوءُ لَكَ بِنِعْمَتِكَ عَلَيَّ، وَأَبُوءُ بِذَنْبِي فَاغْفِرْ لِي، فَإِنَّهُ لَا يَغْفِرُ الذُّنُوبَ إِلَّا أَنْتَ", 1, "صحيح البخاري 6306"),
+            Dhikr("أذكار المساء", "أَعُوذُ بِكَلِمَاتِ اللَّهِ التَّامَّاتِ مِنْ شَرِّ مَا خَلَقَ", 3, "صحيح مسلم 2708"),
+            Dhikr("ذكر عام", "سُبْحَانَ اللَّهِ وَبِحَمْدِهِ", 100, "صحيح البخاري 6405؛ صحيح مسلم 2691"),
+            Dhikr("ذكر عام", "لَا إِلَهَ إِلَّا اللَّهُ وَحْدَهُ لَا شَرِيكَ لَهُ، لَهُ الْمُلْكُ وَلَهُ الْحَمْدُ وَهُوَ عَلَى كُلِّ شَيْءٍ قَدِيرٌ", 100, "صحيح البخاري 3293؛ صحيح مسلم 2691"),
+            Dhikr("بعد الصلاة", "أَسْتَغْفِرُ اللَّهَ", 3, "صحيح مسلم 591"),
+            Dhikr("بعد الصلاة", "اللَّهُمَّ أَنْتَ السَّلَامُ وَمِنْكَ السَّلَامُ، تَبَارَكْتَ يَا ذَا الْجَلَالِ وَالْإِكْرَامِ", 1, "صحيح مسلم 591")
         )
         val prefs = getSharedPreferences("deeni", MODE_PRIVATE)
-        base("الأذكار والتسبيح", "اختر الذكر واضغط على عداده — الأعداد أهداف اختيارية وليست إلزامًا")
+        base("الأذكار والأدعية", "أذكار مختارة مع عددها ومراجعها — الأعداد المعروضة وفق الروايات المذكورة")
+        var lastCategory = ""
         entries.forEachIndexed { index, entry ->
-            val count = label("", 18f, gold, true).apply { gravity = Gravity.CENTER }
-            fun refreshCount() { count.text = "${prefs.getInt("dhikr_$index", 0)} / ${entry.second}" }
-            root.addView(label(entry.first, 19f, cream, true))
+            if (entry.category != lastCategory) {
+                lastCategory = entry.category
+                root.addView(label(lastCategory, 19f, gold, true))
+            }
+            val count = label("", 17f, gold, true).apply { gravity = Gravity.CENTER }
+            fun refreshCount() { count.text = "${prefs.getInt("verified_dhikr_$index", 0)} / ${entry.target}" }
+            root.addView(label(entry.text, 19f, cream, true))
             root.addView(count)
-            root.addView(button("＋ تسبيحة", true) {
-                val next = prefs.getInt("dhikr_$index", 0) + 1
-                prefs.edit().putInt("dhikr_$index", next).apply()
+            root.addView(label("المرجع: ${entry.source}", 12f, muted))
+            root.addView(button("＋ تسجيل الذكر", true) {
+                val next = (prefs.getInt("verified_dhikr_$index", 0) + 1).coerceAtMost(entry.target)
+                prefs.edit().putInt("verified_dhikr_$index", next).apply()
                 refreshCount()
             })
-            root.addView(space(7))
+            root.addView(button("إعادة عداد هذا الذكر", false) {
+                prefs.edit().remove("verified_dhikr_$index").apply()
+                refreshCount()
+            })
+            root.addView(space(10))
             refreshCount()
         }
-        root.addView(button("تصفير عدادات الأذكار", false) {
-            prefs.edit().apply { entries.indices.forEach { remove("dhikr_$it") } }.apply()
-            showAdhkar()
-        })
+        root.addView(label("تنبيه: هذه مجموعة مختارة وليست حصرًا لكل الأذكار. راجع نصوص الأحاديث وطرقها في مصادرها، ولا تجعل العداد بديلًا عن حضور القلب.", 12f, muted))
         root.addView(button("الرئيسية", false) { showHome() })
     }
 
