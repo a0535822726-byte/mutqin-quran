@@ -185,8 +185,6 @@ class MainActivity : Activity() {
             clipToPadding = false
             addView(root)
         }
-        shell.addView(scroll, LinearLayout.LayoutParams(-1, 0, 1f))
-
         val top = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(20, 13, 20, 8)
@@ -196,6 +194,7 @@ class MainActivity : Activity() {
         top.addView(label(title, 25f, cream, true))
         top.addView(label(subtitle, 12f, muted))
         shell.addView(top)
+        shell.addView(scroll, LinearLayout.LayoutParams(-1, 0, 1f))
 
         val nav = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
