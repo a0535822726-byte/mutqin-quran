@@ -96,6 +96,14 @@ class MainActivity : Activity() {
         showHome()
     }
 
+    override fun onStop() {
+        // Do not leave the microphone, audio ticker, or compass sensor active in background.
+        stopRecognition()
+        stopQuranAudio()
+        stopQiblaSensor()
+        super.onStop()
+    }
+
     override fun onDestroy() {
         stopRecognition()
         stopQuranAudio()
