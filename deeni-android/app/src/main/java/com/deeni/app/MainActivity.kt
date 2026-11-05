@@ -305,6 +305,59 @@ class MainActivity : Activity() {
         root.addView(button("الرئيسية", false) { showHome() })
     }
 
+    private fun showIslamicLibrary() {
+        currentPage = "library"
+        base("السيرة والحديث", "محتوى تعليمي مختار مع الإحالة إلى المصادر")
+        root.addView(button("السيرة النبوية • خط زمني", true) { showSirahTimeline() })
+        root.addView(button("أحاديث نبوية صحيحة", false) { showHadithCollection() })
+        root.addView(label("تنبيه علمي: هذه بداية مكتبة منتقاة وليست موسوعة شاملة. عند نقل حديث أو مسألة شرعية، ارجع إلى المصدر وشروح أهل العلم.", 12f, muted))
+        root.addView(button("الرئيسية", false) { showHome() })
+    }
+
+    private fun showSirahTimeline() {
+        currentPage = "sirah"
+        val events = listOf(
+            "المولد النبوي" to "ولد النبي محمد ﷺ في مكة عام الفيل، والمشهور أنه في ربيع الأول، وتفاصيل تحديد اليوم محل خلاف بين أهل السيرة.",
+            "نزول الوحي" to "بدأ الوحي في غار حراء، وكانت أول الآيات نزولًا من سورة العلق.",
+            "الدعوة في مكة" to "دعا النبي ﷺ إلى توحيد الله، وصبر المسلمون على الأذى، وهاجر بعضهم إلى الحبشة.",
+            "الهجرة إلى المدينة" to "هاجر النبي ﷺ من مكة إلى المدينة، وكانت الهجرة النبوية بداية التأريخ الهجري.",
+            "غزوة بدر" to "وقعت في السنة الثانية للهجرة، وكانت أول معركة كبرى بين المسلمين وقريش.",
+            "غزوة أحد" to "وقعت في السنة الثالثة للهجرة، وفيها دروس في الطاعة والصبر والثبات.",
+            "صلح الحديبية" to "كان في السنة السادسة للهجرة، وكان له أثر كبير في انتشار الدعوة.",
+            "فتح مكة" to "كان في السنة الثامنة للهجرة، ودخل النبي ﷺ مكة متواضعًا وعفا عن كثير ممن آذوه.",
+            "حجة الوداع" to "كانت في السنة العاشرة للهجرة، وخطب النبي ﷺ خطبته الجامعة.",
+            "وفاة النبي ﷺ" to "توفي رسول الله ﷺ في المدينة في السنة الحادية عشرة للهجرة."
+        )
+        base("محطات من السيرة", "ترتيب زمني مختصر؛ راجع كتب السيرة للتفاصيل والأسانيد")
+        events.forEachIndexed { i, item ->
+            root.addView(label("${i + 1}. ${item.first}", 18f, gold, true))
+            root.addView(label(item.second, 15f, cream))
+            root.addView(space(8))
+        }
+        root.addView(label("للتوسع: السيرة النبوية لابن هشام، وزاد المعاد لابن القيم، مع مراعاة تحقيق الروايات عند التفصيل.", 12f, muted))
+        root.addView(button("رجوع", false) { showIslamicLibrary() })
+    }
+
+    private fun showHadithCollection() {
+        currentPage = "hadith"
+        val hadiths = listOf(
+            "إنما الأعمال بالنيات، وإنما لكل امرئ ما نوى." to "صحيح البخاري، حديث 1؛ وصحيح مسلم، حديث 1907.",
+            "الدين النصيحة." to "صحيح مسلم، حديث 55.",
+            "من كان يؤمن بالله واليوم الآخر فليقل خيرًا أو ليصمت." to "صحيح البخاري، حديث 6018؛ وصحيح مسلم، حديث 47.",
+            "لا يؤمن أحدكم حتى يحب لأخيه ما يحب لنفسه." to "صحيح البخاري، حديث 13؛ وصحيح مسلم، حديث 45.",
+            "الكلمة الطيبة صدقة." to "صحيح البخاري، حديث 2989؛ وصحيح مسلم، حديث 1009."
+        )
+        base("أحاديث نبوية", "مختارات مشهورة من الصحيحين مع أرقام الأحاديث")
+        hadiths.forEachIndexed { i, item ->
+            root.addView(label("الحديث ${i + 1}", 14f, gold, true))
+            root.addView(label("«${item.first}»", 20f, cream, true))
+            root.addView(label(item.second, 13f, muted))
+            root.addView(space(10))
+        }
+        root.addView(label("هذه المختارات ليست بديلًا عن الرجوع إلى نص الحديث كاملًا وشرحه، ولا تتضمن أحكامًا فقهية مستنبطة.", 12f, muted))
+        root.addView(button("رجوع", false) { showIslamicLibrary() })
+    }
+
     private fun showRevision() {
         currentPage = "revision"
         val prefs = getSharedPreferences("deeni", MODE_PRIVATE)
