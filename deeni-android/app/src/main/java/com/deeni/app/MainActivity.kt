@@ -20,6 +20,9 @@ import android.text.Spanned
 import android.text.style.ForegroundColorSpan
 import android.view.Gravity
 import android.view.View
+import android.webkit.JavascriptInterface
+import android.webkit.WebView
+import android.webkit.WebViewClient
 import android.widget.*
 import java.util.Locale
 
@@ -141,16 +144,40 @@ class MainActivity : Activity() {
     }
 
     private var mushafPage = 1
-    private var pageTextView: TextView? = null
+    private var mushafWebView: WebView? = null
     private var pageStatus: TextView? = null
+    private var ayahStatus: TextView? = null
+
+    private inner class MushafBridge {
+        @JavascriptInterface
+        fun onAyahSelected(surah: Int, ayah: Int) {
+            if (surah <= 0 || ayah <= 0) return
+            runOnUiThread { showSelectedAyah(surah, ayah) }
+        }
+    }
+
+    private fun showSelectedAyah(surah: Int, ayah: Int) {
+        ayahStatus?.text = "جارٍ تحميل الآية $surah:$ayah…"
+        Thread {
+            val result = QuranPageSource.loadAyah(surah, ayah)
+            runOnUiThread {
+                if (currentPage != "quran") return@runOnUiThread
+                ayahStatus?.text = if (result.isSuccess) {
+                    "الآية $surah:$ayah\n" + result.getOrThrow()
+                } else {
+                    "تعذر تحميل نص الآية المحددة."
+                }
+            }
+        }.start()
+    }
 
     private fun showQuran(startMic: Boolean = false) {
         currentPage = "quran"
         mushafPage = getSharedPreferences("deeni", MODE_PRIVATE).getInt("mushaf_page", 1).coerceIn(1, 604)
-        base("المصحف الشريف", "تصفح صفحات القرآن الكريم • النص العثماني")
+        base("المصحف الشريف", "مصحف المدينة النبوية • رواية حفص • صفحات مطبوعة")
         root.addView(label("القارئ المحدد: $selectedReader", 14f, gold, true))
         root.addView(button("تغيير القارئ", false) { chooseReader() })
-        root.addView(label("مصدر النص: واجهة القرآن الكريم الرقمية. يلزم اتصال بالإنترنت لتحميل الصفحات. هذا عرض نصي للصفحة وليس صورة طبق الأصل من طبعة مصحف المدينة.", 12f, muted))
+        root.addView(label("صفحات مصحف المدينة النبوية الصادر عن مجمع الملك فهد لطباعة المصحف الشريف. يلزم الاتصال بالإنترنت لعرض الصفحة.", 12f, muted))
         val controls = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER; layoutDirection = View.LAYOUT_DIRECTION_LTR }
         controls.addView(button("السابق", false) { loadMushafPage(mushafPage - 1) }, LinearLayout.LayoutParams(0, -2, 1f))
         controls.addView(button("رقم الصفحة", true) {
@@ -161,17 +188,30 @@ class MainActivity : Activity() {
         }, LinearLayout.LayoutParams(0, -2, 1f))
         controls.addView(button("التالي", false) { loadMushafPage(mushafPage + 1) }, LinearLayout.LayoutParams(0, -2, 1f))
         root.addView(controls)
-        pageStatus = label("جارٍ تحميل الصفحة…", 14f, gold, true)
+        pageStatus = label("جارٍ تحميل صفحة المصحف…", 14f, gold, true)
         root.addView(pageStatus!!)
-        pageTextView = TextView(this).apply {
-            text = "يتم تحميل نص الصفحة…"; textSize = 23f; setTextColor(Color.rgb(53, 49, 40))
-            gravity = Gravity.CENTER; textDirection = View.TEXT_DIRECTION_RTL
-            typeface = Typeface.create("serif", Typeface.NORMAL)
-            setLineSpacing(12f, 1.25f)
-            setPadding(22, 28, 22, 28)
-            background = shape(Color.rgb(248, 243, 228), 18f)
+        mushafWebView = WebView(this).apply {
+            setBackgroundColor(Color.rgb(248, 243, 228))
+            settings.javaScriptEnabled = true
+            settings.domStorageEnabled = false
+            settings.allowFileAccess = false
+            settings.allowContentAccess = false
+            settings.builtInZoomControls = true
+            settings.displayZoomControls = false
+            settings.loadsImagesAutomatically = true
+            addJavascriptInterface(MushafBridge(), "DeeniMushaf")
+            webViewClient = object : WebViewClient() {
+                override fun shouldOverrideUrlLoading(view: WebView?, url: String?): Boolean = true
+                override fun onPageFinished(view: WebView?, url: String?) {
+                    pageStatus?.text = "صفحة $mushafPage من 604 • اضغط على الآية لتحديدها"
+                }
+            }
         }
-        root.addView(pageTextView!!)
+        root.addView(mushafWebView!!, LinearLayout.LayoutParams(-1, 560))
+        ayahStatus = label("اضغط على موضع آية في الصفحة لعرض نصها.", 19f, cream, true)
+        ayahStatus!!.background = shape(panel, 16f)
+        ayahStatus!!.setPadding(14, 14, 14, 14)
+        root.addView(ayahStatus!!)
         root.addView(space(10))
         root.addView(button("حفظ هذه الصفحة كموضع متابعة", true) {
             getSharedPreferences("deeni", MODE_PRIVATE).edit().putInt("mushaf_page", mushafPage).apply()
@@ -179,8 +219,8 @@ class MainActivity : Activity() {
         })
         root.addView(space(14))
         root.addView(label("التسميع الصوتي", 20f, cream, true))
-        root.addView(label("التعرف الصوتي العام قد يخطئ في ألفاظ القرآن؛ هذه الأداة ليست محركًا متخصصًا ولا تصحح التجويد. لا تعرض نتيجة على أنها حكم قطعي.", 13f, muted))
-        val status = label("التسميع متاح لسورة الفاتحة فقط في هذه المرحلة", 14f, gold, true)
+        root.addView(label("التعرف الصوتي العام قد يخطئ في ألفاظ القرآن؛ هذه الأداة ليست محركًا متخصصًا ولا تصحح التجويد.", 13f, muted))
+        val status = label("التسميع التجريبي متاح لسورة الفاتحة فقط", 14f, gold, true)
         root.addView(status)
         val live = TextView(this).apply { text = "النص الملتقط يظهر هنا"; textSize = 17f; setTextColor(cream); background = shape(panel, 16f); setPadding(14, 14, 14, 14) }
         root.addView(live)
@@ -191,26 +231,85 @@ class MainActivity : Activity() {
         if (startMic) root.post { beginRecognition(status, live, mutableListOf()) }
     }
 
+    private fun mushafHtml(page: Int): String {
+        val safePage = page.coerceIn(1, 604)
+        return """
+            <!doctype html>
+            <html lang="ar" dir="rtl">
+            <head>
+              <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=4">
+              <style>
+                html,body{margin:0;padding:0;background:#f8f3e4}
+                #page{width:100%;margin:0 auto}
+                svg{display:block;width:100%;height:auto;max-width:100%}
+                .ayahPolygon{cursor:pointer;pointer-events:all}
+              </style>
+            </head>
+            <body>
+              <div id="page"></div>
+              <script>
+                (async function(){
+                  const host=document.getElementById('page');
+                  const number=String($safePage).padStart(3,'0');
+                  const url='https://raw.githubusercontent.com/quran-ws/quran-svg/main/mushafs/hafs/kfqc/svg/'+number+'.svg';
+                  try{
+                    const response=await fetch(url);
+                    if(!response.ok) throw new Error('HTTP '+response.status);
+                    const source=await response.text();
+                    const parsed=new DOMParser().parseFromString(source,'image/svg+xml');
+                    const svg=parsed.documentElement;
+                    if(svg.querySelector('parsererror')) throw new Error('SVG parse error');
+                    svg.removeAttribute('width');
+                    svg.removeAttribute('height');
+                    const content=svg.querySelector('#content')||svg;
+                    const box=content.getBBox();
+                    if(box.width>0&&box.height>0){
+                      const pad=5;
+                      svg.setAttribute('viewBox',(box.x-pad)+' '+(box.y-pad)+' '+(box.width+pad*2)+' '+(box.height+pad*2));
+                    }
+                    svg.querySelectorAll('.ayahPolygon').forEach(function(path){
+                      path.style.pointerEvents='all';
+                      path.addEventListener('click',function(){
+                        svg.querySelectorAll('.ayahPolygon').forEach(function(p){p.setAttribute('fill-opacity','0');});
+                        path.setAttribute('fill','#d6b76f');
+                        path.setAttribute('fill-opacity','0.38');
+                        const s=Number(path.getAttribute('surah'));
+                        const a=Number(path.getAttribute('ayah'));
+                        if(s>0&&a>0&&window.DeeniMushaf) window.DeeniMushaf.onAyahSelected(s,a);
+                      });
+                    });
+                    host.replaceChildren(document.importNode(svg,true));
+                    const mounted=host.querySelector('svg');
+                    mounted.style.width='100%';
+                    mounted.style.height='auto';
+                    mounted.querySelectorAll('.ayahPolygon').forEach(function(path){
+                      path.style.pointerEvents='all';
+                      path.addEventListener('click',function(){
+                        mounted.querySelectorAll('.ayahPolygon').forEach(function(p){p.setAttribute('fill-opacity','0');});
+                        path.setAttribute('fill','#d6b76f');
+                        path.setAttribute('fill-opacity','0.38');
+                        const s=Number(path.getAttribute('surah'));
+                        const a=Number(path.getAttribute('ayah'));
+                        if(s>0&&a>0&&window.DeeniMushaf) window.DeeniMushaf.onAyahSelected(s,a);
+                      });
+                    });
+                  }catch(error){
+                    host.innerHTML='<p style="font:18px sans-serif;color:#704b20;text-align:center;padding:24px">تعذر تحميل صفحة المصحف. تحقق من الإنترنت ثم أعد المحاولة من التطبيق.</p>';
+                  }
+                })();
+              </script>
+            </body>
+            </html>
+        """.trimIndent()
+    }
+
     private fun loadMushafPage(requested: Int) {
         val page = requested.coerceIn(1, 604)
         mushafPage = page
-        pageStatus?.text = "جارٍ تحميل الصفحة $page من 604…"
-        pageTextView?.text = "يتم تحميل النص القرآني…"
-        Thread {
-            val result = QuranPageSource.load(page)
-            runOnUiThread {
-                if (currentPage != "quran" || mushafPage != page) return@runOnUiThread
-                if (result.isSuccess) {
-                    pageTextView?.text = result.getOrThrow()
-                    pageStatus?.text = "صفحة $page • من 604"
-                    getSharedPreferences("deeni", MODE_PRIVATE).edit().putInt("mushaf_page", page).apply()
-                } else {
-                    pageStatus?.text = "تعذر تحميل الصفحة"
-                    pageTextView?.text = "لم نتمكن من جلب النص. تحقق من اتصال الإنترنت ثم اضغط إعادة المحاولة."
-                    root.addView(button("إعادة تحميل الصفحة", false) { loadMushafPage(page) })
-                }
-            }
-        }.start()
+        pageStatus?.text = "جارٍ تحميل صفحة المصحف $page من 604…"
+        ayahStatus?.text = "اضغط على موضع آية في الصفحة لعرض نصها."
+        getSharedPreferences("deeni", MODE_PRIVATE).edit().putInt("mushaf_page", page).apply()
+        mushafWebView?.loadDataWithBaseURL("https://appassets.androidplatform.net/", mushafHtml(page), "text/html", "UTF-8", null)
     }
 
     private fun normalize(s: String): String =
