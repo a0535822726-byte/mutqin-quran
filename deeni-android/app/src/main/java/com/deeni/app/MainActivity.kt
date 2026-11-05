@@ -125,6 +125,7 @@ class MainActivity : Activity() {
         root.addView(label("اكتشف ديني", 20f, cream, true))
         card("التسميع المباشر", "اقرأ وتابع الكلمات أثناء التسميع", "🎙") { showQuran(true) }
         card("البحث في القرآن", "ابحث عن كلمة أو عبارة في الآيات", "⌕") { showQuranSearch() }
+        card("التفسير الميسر", "اقرأ تفسير الآية مع نصها القرآني", "📖") { showTafsir() }
         card("مكتبة القراء", "اختر قارئك المفضل", "♫") { chooseReader() }
         card("الأذكار والتسبيح", "ذكر يومي وعداد محفوظ", "✧") { showTasbeeh() }
         card("الحفظ والمراجعة", "خطة يومية وسجل إنجاز محفوظ", "۞") { showRevision() }
@@ -735,6 +736,65 @@ class MainActivity : Activity() {
         if (manager != null && listener != null) manager.unregisterListener(listener)
         qiblaSensorManager = null
         qiblaSensorListener = null
+    }
+
+    private fun showTafsir() {
+        currentPage = "tafsir"
+        base("التفسير الميسر", "اختر رقم السورة والآية لعرض النص والتفسير")
+        val surahInput = EditText(this).apply {
+            setText("1")
+            hint = "رقم السورة من 1 إلى 114"
+            inputType = android.text.InputType.TYPE_CLASS_NUMBER
+            setTextColor(cream)
+            setHintTextColor(muted)
+            background = shape(panel, 14f)
+            setPadding(14, 12, 14, 12)
+        }
+        val ayahInput = EditText(this).apply {
+            setText("1")
+            hint = "رقم الآية"
+            inputType = android.text.InputType.TYPE_CLASS_NUMBER
+            setTextColor(cream)
+            setHintTextColor(muted)
+            background = shape(panel, 14f)
+            setPadding(14, 12, 14, 12)
+        }
+        root.addView(label("رقم السورة", 14f, gold, true))
+        root.addView(surahInput)
+        root.addView(label("رقم الآية", 14f, gold, true))
+        root.addView(ayahInput)
+        val output = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        root.addView(output)
+        root.addView(button("عرض التفسير", true) {
+            val surah = surahInput.text.toString().toIntOrNull()
+            val ayah = ayahInput.text.toString().toIntOrNull()
+            if (surah == null || ayah == null || surah !in 1..114 || ayah !in 1..286) {
+                Toast.makeText(this, "تحقق من رقم السورة والآية", Toast.LENGTH_SHORT).show()
+            } else {
+                output.removeAllViews()
+                output.addView(label("جارٍ تحميل النص والتفسير…", 14f, gold))
+                Thread {
+                    val response = TafsirSource.load(surah, ayah)
+                    runOnUiThread {
+                        if (currentPage != "tafsir") return@runOnUiThread
+                        output.removeAllViews()
+                        if (response.isSuccess) {
+                            val item = response.getOrThrow()
+                            output.addView(label("${item.surahName} • الآية ${item.ayahNumber}", 15f, gold, true))
+                            output.addView(label(item.ayahText, 24f, cream, true))
+                            output.addView(space(12))
+                            output.addView(label("التفسير الميسر", 19f, gold, true))
+                            output.addView(label(item.tafsirText, 17f, cream))
+                            output.addView(label("المصدر: إصدار التفسير الميسر عبر خدمة AlQuran Cloud. راجع كتب التفسير المعتمدة وأهل العلم عند طلب التفصيل أو الاستنباط.", 12f, muted))
+                        } else {
+                            output.addView(label("تعذر تحميل التفسير لهذه الآية. تحقق من الاتصال وصحة الأرقام.", 14f, gold))
+                        }
+                    }
+                }.start()
+            }
+        })
+        root.addView(button("فتح المصحف", false) { showQuran() })
+        root.addView(button("الرئيسية", false) { showHome() })
     }
 
     private fun showComing(title: String) {
