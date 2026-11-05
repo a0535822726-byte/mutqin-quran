@@ -7,7 +7,9 @@ import java.net.URLEncoder
 
 data class PrayerTimesResult(
     val dateLabel: String,
-    val times: List<Pair<String, String>>
+    val times: List<Pair<String, String>>,
+    val latitude: Double,
+    val longitude: Double
 )
 
 object PrayerTimesSource {
@@ -45,7 +47,10 @@ object PrayerTimesSource {
                 check(raw.isNotBlank() && raw != "null") { "Missing prayer time: $key" }
                 arabic to raw.substringBefore(" ").trim()
             }
-            PrayerTimesResult("الميلادي: $gregorian   •   الهجري: $hijri", values)
+            val meta = data.getJSONObject("meta")
+            val latitude = meta.getDouble("latitude")
+            val longitude = meta.getDouble("longitude")
+            PrayerTimesResult("الميلادي: $gregorian   •   الهجري: $hijri", values, latitude, longitude)
         } finally {
             connection.disconnect()
         }
