@@ -7,10 +7,14 @@ import android.graphics.Typeface
 import android.view.Gravity
 import android.view.View
 import android.widget.Button
+import android.widget.CheckBox
 import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 class MainActivity : Activity() {
     private val ink = Color.rgb(25, 48, 43)
@@ -22,6 +26,7 @@ class MainActivity : Activity() {
     private var quizScore = 0
     private var reviewCount = 0
     private var savedNote = ""
+    private val dailyTasks = listOf("قراءة ورد من القرآن", "أذكار الصباح أو المساء", "مراجعة محفوظ سابق", "تعلم فائدة إسلامية", "الدعاء والاستغفار")
 
     private data class Question(val prompt: String, val answers: List<String>, val correct: Int, val note: String)
     private val questions = listOf(
@@ -40,6 +45,11 @@ class MainActivity : Activity() {
         tasbeehCount = prefs.getInt("tasbeeh", 0)
         reviewCount = prefs.getInt("reviews", 0)
         savedNote = prefs.getString("note", "") ?: ""
+        val today = SimpleDateFormat("yyyyMMdd", Locale.US).format(Date())
+        if (prefs.getString("habit_day", "") != today) {
+            prefs.edit().putString("habit_day", today).apply()
+            dailyTasks.indices.forEach { prefs.edit().putBoolean("habit_$it", false).apply() }
+        }
         showHome()
     }
 
@@ -109,7 +119,8 @@ class MainActivity : Activity() {
             Triple("الألعاب والمسابقات", "أسئلة إسلامية تفاعلية", "quiz"),
             Triple("التسبيح", "عداد تسبيح مع حفظ العدد", "tasbeeh"),
             Triple("الحفظ والمراجعة", "سجل جلسات المراجعة", "revision"),
-            Triple("ملاحظاتي", "احفظ فوائدك وخططك", "notes")
+            Triple("ملاحظاتي", "احفظ فوائدك وخططك", "notes"),
+            Triple("وردك اليومي", "تابع عاداتك الإيمانية اليومية", "habits")
         )
         sections.forEach { item ->
             val card = LinearLayout(this).apply {
@@ -135,6 +146,7 @@ class MainActivity : Activity() {
             "tasbeeh" -> showTasbeeh()
             "revision" -> showRevision()
             "notes" -> showNotes()
+            "habits" -> showHabits()
             "quiz" -> showQuiz()
             "azkar" -> showAzkar()
             "quran" -> showInfo("القرآن الكريم", "هذه مساحة قسم القرآن. النسخة الحالية لا تتضمن بعد نص المصحف الكامل أو صفحات المصحف المعتمدة. يجري تجهيز مصدر قرآني موثوق قبل إدراجه حتى لا تظهر آية بخطأ.")
@@ -212,6 +224,45 @@ class MainActivity : Activity() {
             editor.clearFocus()
             editor.hint = "تم حفظ الملاحظة على جهازك"
         })
+        setContentView(scroll)
+    }
+
+
+    private fun showHabits() {
+        val scroll = setupPage()
+        heading("وردك اليومي", "قائمة متابعة شخصية تتجدد كل يوم")
+        val prefs = getSharedPreferences("deeni", MODE_PRIVATE)
+        val progress = text("", 20f, green, true)
+        page.addView(progress)
+        val checks = mutableListOf<CheckBox>()
+        fun updateProgress() {
+            val done = checks.count { it.isChecked }
+            progress.text = "إنجاز اليوم: $done من ${dailyTasks.size}"
+        }
+        dailyTasks.forEachIndexed { index, task ->
+            val check = CheckBox(this).apply {
+                text = task
+                textSize = 17f
+                setTextColor(ink)
+                isChecked = prefs.getBoolean("habit_$index", false)
+                buttonTintList = android.content.res.ColorStateList.valueOf(green)
+                setOnCheckedChangeListener { _, checked ->
+                    prefs.edit().putBoolean("habit_$index", checked).apply()
+                    updateProgress()
+                }
+            }
+            checks.add(check)
+            page.addView(check)
+        }
+        updateProgress()
+        addButton("إعادة ضبط قائمة اليوم", {
+            checks.forEachIndexed { index, check ->
+                check.isChecked = false
+                prefs.edit().putBoolean("habit_$index", false).apply()
+            }
+            updateProgress()
+        })
+        page.addView(text("هذه القائمة للتذكير الشخصي وليست حكمًا على مستوى الالتزام أو العبادة.", 13f, Color.DKGRAY))
         setContentView(scroll)
     }
 
