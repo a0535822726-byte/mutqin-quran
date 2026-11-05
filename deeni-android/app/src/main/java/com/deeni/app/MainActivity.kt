@@ -1,337 +1,299 @@
 package com.deeni.app
 
+import android.Manifest
 import android.app.Activity
-import android.app.AlertDialog
+import android.content.Intent
+import android.content.pm.PackageManager
 import android.os.Bundle
+import android.speech.RecognitionListener
+import android.speech.RecognizerIntent
+import android.speech.SpeechRecognizer
 import android.graphics.Color
 import android.graphics.Typeface
+import android.graphics.drawable.GradientDrawable
+import android.text.SpannableString
+import android.text.Spanned
+import android.text.style.ForegroundColorSpan
 import android.view.Gravity
 import android.view.View
-import android.widget.Button
-import android.widget.CheckBox
-import android.widget.EditText
-import android.widget.LinearLayout
-import android.widget.ScrollView
-import android.widget.TextView
-import java.text.SimpleDateFormat
-import java.util.Date
+import android.widget.*
 import java.util.Locale
 
 class MainActivity : Activity() {
-    private val ink = Color.rgb(25, 48, 43)
-    private val green = Color.rgb(25, 112, 83)
-    private val paper = Color.rgb(247, 248, 244)
-    private lateinit var page: LinearLayout
-    private var tasbeehCount = 0
-    private var quizIndex = 0
-    private var quizScore = 0
-    private var reviewCount = 0
-    private var savedNote = ""
-    private val dailyTasks = listOf("قراءة ورد من القرآن", "أذكار الصباح أو المساء", "مراجعة محفوظ سابق", "تعلم فائدة إسلامية", "الدعاء والاستغفار")
-
-    private data class Question(val prompt: String, val answers: List<String>, val correct: Int, val note: String)
-    private val questions = listOf(
-        Question("كم عدد سور القرآن الكريم؟", listOf("110", "114", "120", "99"), 1, "عدد سور القرآن الكريم 114 سورة."),
-        Question("ما السورة التي تُسمّى أم الكتاب؟", listOf("البقرة", "الإخلاص", "الفاتحة", "يس"), 2, "سورة الفاتحة تُسمّى أم الكتاب."),
-        Question("كم عدد أركان الإسلام؟", listOf("4", "5", "6", "7"), 1, "أركان الإسلام خمسة."),
-        Question("ما اسم الغار الذي نزل فيه الوحي أول مرة؟", listOf("ثور", "حراء", "أحد", "قباء"), 1, "كان ذلك في غار حراء.")
+    private val bg = Color.rgb(9, 28, 25)
+    private val panel = Color.rgb(18, 48, 42)
+    private val panel2 = Color.rgb(25, 61, 53)
+    private val gold = Color.rgb(218, 183, 111)
+    private val cream = Color.rgb(246, 241, 226)
+    private val muted = Color.rgb(174, 194, 184)
+    private lateinit var root: LinearLayout
+    private var recognizer: SpeechRecognizer? = null
+    private var currentPage = "home"
+    private var selectedReader = "ماهر المعيقلي"
+    private var tasbeeh = 0
+    private val readers = listOf("ماهر المعيقلي", "عبد الرحمن السديس", "ياسر الدوسري", "مشاري العفاسي", "محمود خليل الحصري", "محمد صديق المنشاوي", "عبد الباسط عبد الصمد", "سعد الغامدي", "أحمد العجمي", "علي جابر")
+    private val fatiha = listOf(
+        "بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ",
+        "الْحَمْدُ لِلَّهِ رَبِّ الْعَالَمِينَ",
+        "الرَّحْمَٰنِ الرَّحِيمِ",
+        "مَالِكِ يَوْمِ الدِّينِ",
+        "إِيَّاكَ نَعْبُدُ وَإِيَّاكَ نَسْتَعِينُ",
+        "اهْدِنَا الصِّرَاطَ الْمُسْتَقِيمَ",
+        "صِرَاطَ الَّذِينَ أَنْعَمْتَ عَلَيْهِمْ غَيْرِ الْمَغْضُوبِ عَلَيْهِمْ وَلَا الضَّالِّينَ"
     )
+    private val expectedWords = fatiha.joinToString(" ").split(Regex("\\s+"))
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        window.statusBarColor = paper
-        window.navigationBarColor = paper
-        window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR
-        val prefs = getSharedPreferences("deeni", MODE_PRIVATE)
-        tasbeehCount = prefs.getInt("tasbeeh", 0)
-        reviewCount = prefs.getInt("reviews", 0)
-        savedNote = prefs.getString("note", "") ?: ""
-        val today = SimpleDateFormat("yyyyMMdd", Locale.US).format(Date())
-        if (prefs.getString("habit_day", "") != today) {
-            prefs.edit().putString("habit_day", today).apply()
-            dailyTasks.indices.forEach { prefs.edit().putBoolean("habit_$it", false).apply() }
-        }
+        window.statusBarColor = bg
+        window.navigationBarColor = bg
+        window.decorView.systemUiVisibility = 0
+        tasbeeh = getSharedPreferences("deeni", MODE_PRIVATE).getInt("tasbeeh", 0)
+        selectedReader = getSharedPreferences("deeni", MODE_PRIVATE).getString("reader", readers[0]) ?: readers[0]
         showHome()
     }
 
-    private fun setupPage(): ScrollView {
-        page = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(22, 26, 22, 28)
-            layoutDirection = View.LAYOUT_DIRECTION_RTL
-            setBackgroundColor(paper)
-        }
-        return ScrollView(this).apply {
-            setBackgroundColor(paper)
-            addView(page)
-        }
-    }
+    private fun shape(color: Int, radius: Float = 24f): GradientDrawable =
+        GradientDrawable().apply { setColor(color); cornerRadius = radius }
 
-    private fun text(value: String, size: Float = 17f, color: Int = ink, bold: Boolean = false): TextView {
-        return TextView(this).apply {
-            text = value
-            textSize = size
-            setTextColor(color)
-            if (bold) typeface = Typeface.DEFAULT_BOLD
+    private fun label(value: String, size: Float = 16f, color: Int = cream, bold: Boolean = false): TextView =
+        TextView(this).apply {
+            text = value; textSize = size; setTextColor(color)
             gravity = Gravity.RIGHT
-            setPadding(4, 9, 4, 9)
+            if (bold) typeface = Typeface.create("sans-serif", Typeface.BOLD)
+            setPadding(0, 6, 0, 6)
+            textDirection = View.TEXT_DIRECTION_RTL
         }
-    }
 
-    private fun addButton(label: String, action: () -> Unit) {
-        val button = Button(this).apply {
-            text = label
-            isAllCaps = false
-            setTextColor(Color.WHITE)
-            setBackgroundColor(green)
+    private fun button(value: String, primary: Boolean = false, action: () -> Unit): TextView =
+        TextView(this).apply {
+            text = value; textSize = 16f; gravity = Gravity.CENTER
+            setTextColor(if (primary) bg else cream)
+            background = shape(if (primary) gold else panel2, 18f)
+            setPadding(18, 15, 18, 15)
             setOnClickListener { action() }
         }
-        val params = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
-        params.setMargins(0, 7, 0, 7)
-        page.addView(button, params)
+
+    private fun base(title: String, subtitle: String) {
+        root = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(20, 20, 20, 22)
+            layoutDirection = View.LAYOUT_DIRECTION_RTL
+            setBackgroundColor(bg)
+        }
+        val scroll = ScrollView(this).apply { isFillViewport = true; addView(root) }
+        root.addView(label("دِينِي  •  رفيق رحلتك", 14f, gold, true))
+        root.addView(label(title, 29f, cream, true))
+        root.addView(label(subtitle, 14f, muted))
+        root.addView(space(12))
+        setContentView(scroll)
     }
 
-    private fun heading(title: String, subtitle: String) {
-        page.addView(text(title, 28f, ink, true))
-        page.addView(text(subtitle, 15f, green))
-        addButton("العودة للرئيسية", ::showHome)
+    private fun space(h: Int): View = View(this).apply { layoutParams = LinearLayout.LayoutParams(1, h) }
+
+    private fun card(title: String, desc: String, icon: String, action: () -> Unit) {
+        val box = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            background = shape(panel, 22f)
+            setPadding(18, 13, 18, 13)
+            addView(label(icon, 21f, gold, true))
+            addView(label(title, 19f, cream, true))
+            addView(label(desc, 13f, muted))
+            setOnClickListener { action() }
+        }
+        val p = LinearLayout.LayoutParams(-1, -2); p.bottomMargin = 12
+        root.addView(box, p)
     }
 
     private fun showHome() {
-        val scroll = setupPage()
-        page.addView(text("ديني", 34f, ink, true).apply { gravity = Gravity.CENTER })
-        page.addView(text("رفيقك للقرآن والسيرة والعبادة", 16f, green).apply {
-            gravity = Gravity.CENTER
-            setPadding(0, 4, 0, 22)
+        currentPage = "home"
+        base("السلام عليك", "مساحة هادئة للقرآن والتعلم والذكر")
+        val hero = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL; background = shape(panel2, 26f); setPadding(20, 18, 20, 18)
+            addView(label("وَرَتِّلِ الْقُرْآنَ تَرْتِيلًا", 25f, gold, true))
+            addView(label("ابدأ من حيث وصلت، وتقدّم بخطوات ثابتة.", 14f, cream))
+            addView(button("افتح المصحف", true) { showQuran() })
+        }
+        root.addView(hero)
+        root.addView(space(18))
+        root.addView(label("اكتشف ديني", 20f, cream, true))
+        card("التسميع المباشر", "اقرأ وتابع الكلمات أثناء التسميع", "🎙") { showQuran(true) }
+        card("مكتبة القراء", "اختر قارئك المفضل", "♫") { chooseReader() }
+        card("الأذكار والتسبيح", "ذكر يومي وعداد محفوظ", "✧") { showTasbeeh() }
+        card("الحفظ والمراجعة", "خطتك ومواضع مراجعتك", "۞") { showComing("الحفظ والمراجعة") }
+        card("السيرة والحديث", "محتوى علمي بمصادره", "☾") { showComing("السيرة والحديث") }
+        root.addView(label("نسخة تطوير: المصحف المعروض حاليًا سورة الفاتحة كنموذج أولي، وبقية السور ومصادر الصوت قيد الإضافة.", 12f, muted))
+    }
+
+    private fun showQuran(startMic: Boolean = false) {
+        currentPage = "quran"
+        base("المصحف الشريف", "سورة الفاتحة • نموذج القراءة والمتابعة")
+        val readerBox = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL; background = shape(panel, 20f); setPadding(16, 12, 16, 12)
+            addView(label("القارئ المحدد", 13f, muted))
+            addView(button("♫  $selectedReader  ·  تغيير القارئ", false) { chooseReader() })
+            addView(label("تشغيل تلاوة القارئ ومزامنة الآيات ستضاف بعد ربط مصدر صوت موثوق وتوقيت الآيات؛ هذا الزر لا يدّعي تشغيل صوت غير موجود.", 12f, muted))
+        }
+        root.addView(readerBox)
+        root.addView(space(14))
+        val mushaf = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            background = shape(Color.rgb(248, 243, 228), 24f)
+            setPadding(18, 18, 18, 18)
+        }
+        mushaf.addView(TextView(this).apply {
+            text = "سُورَةُ الْفَاتِحَةِ"; textSize = 20f; setTextColor(Color.rgb(104, 79, 39))
+            gravity = Gravity.CENTER; typeface = Typeface.DEFAULT_BOLD; setPadding(0, 4, 0, 16)
         })
-        page.addView(text("ابدأ يومك بذكر الله", 21f, Color.WHITE, true).apply {
-            gravity = Gravity.CENTER
-            setPadding(18, 24, 18, 24)
-            setBackgroundColor(green)
-        })
-        val sections = listOf(
-            Triple("القرآن الكريم", "قراءة المصحف والحفظ والمراجعة", "quran"),
-            Triple("التسميع الذكي", "التسميع الصوتي وتحليل الأخطاء — قيد التطوير", "recite"),
-            Triple("التجويد", "أحكام التلاوة ومخارج الحروف", "tajweed"),
-            Triple("السيرة النبوية", "محطات السيرة ومصادرها", "seerah"),
-            Triple("الحديث الشريف", "أحاديث ومراجعها", "hadith"),
-            Triple("الأذكار والأدعية", "أذكار يومية مختارة", "azkar"),
-            Triple("الغزوات والتاريخ", "أحداث السيرة والتاريخ", "history"),
-            Triple("الألعاب والمسابقات", "أسئلة إسلامية تفاعلية", "quiz"),
-            Triple("التسبيح", "عداد تسبيح مع حفظ العدد", "tasbeeh"),
-            Triple("الحفظ والمراجعة", "سجل جلسات المراجعة", "revision"),
-            Triple("ملاحظاتي", "احفظ فوائدك وخططك", "notes"),
-            Triple("وردك اليومي", "تابع عاداتك الإيمانية اليومية", "habits")
-        )
-        sections.forEach { item ->
-            val card = LinearLayout(this).apply {
-                orientation = LinearLayout.VERTICAL
-                setPadding(18, 13, 18, 13)
-                setBackgroundColor(Color.WHITE)
-                elevation = 3f
-                addView(text(item.first, 19f, ink, true))
-                addView(text(item.second, 14f, Color.DKGRAY))
-                setOnClickListener { openSection(item.third) }
-                isClickable = true
+        val ayahViews = mutableListOf<TextView>()
+        fatiha.forEachIndexed { i, ayah ->
+            val tv = TextView(this).apply {
+                text = "﴿${i + 1}﴾  $ayah"
+                textSize = 22f; setTextColor(Color.rgb(53, 49, 40)); gravity = Gravity.CENTER
+                typeface = Typeface.create("serif", Typeface.NORMAL)
+                setPadding(5, 11, 5, 11); textDirection = View.TEXT_DIRECTION_RTL
             }
-            val params = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
-            params.setMargins(0, 10, 0, 0)
-            page.addView(card, params)
+            ayahViews.add(tv); mushaf.addView(tv)
         }
-        page.addView(text("تنبيه: ميزات المصحف الكامل والتسميع الصوتي والتحليل الدقيق لم تُنفّذ بعد، ولن نعرضها على أنها جاهزة قبل اختبارها.", 13f, Color.DKGRAY))
-        setContentView(scroll)
+        root.addView(mushaf)
+        root.addView(space(14))
+        root.addView(label("التسميع الذكي", 21f, cream, true))
+        root.addView(label("اسمح للميكروفون، ثم اقرأ الفاتحة. سيعرض التعرف الصوتي النص الذي التقطه ويقارن الكلمات بالنص المعروض. قد يخطئ التعرف الصوتي في التشكيل أو النطق؛ راجع النتيجة ولا تعتمد عليه وحده.", 13f, muted))
+        val status = label("جاهز للتسميع", 15f, gold, true)
+        root.addView(status)
+        val live = TextView(this).apply {
+            text = "سيظهر النص الملتقط هنا أثناء القراءة…"; textSize = 18f; setTextColor(cream)
+            background = shape(panel, 18f); setPadding(15, 15, 15, 15); gravity = Gravity.RIGHT
+        }
+        root.addView(live)
+        root.addView(space(10))
+        root.addView(button("🎙  ابدأ التسميع", true) { beginRecognition(status, live, ayahViews) })
+        root.addView(space(8))
+        root.addView(button("إيقاف التسميع", false) { stopRecognition(); status.text = "تم إيقاف التسميع" })
+        root.addView(label("ملاحظة: المقارنة الحالية نموذج أولي للفـاتحة باستخدام خدمة التعرف على الكلام في الجهاز، وليست محرك ترتيل متخصصًا ولا تصحيحًا للتجويد أو المخارج.", 12f, muted))
+        root.addView(button("العودة للرئيسية", false) { stopRecognition(); showHome() })
+        if (startMic) root.post { beginRecognition(status, live, ayahViews) }
     }
 
-    private fun openSection(id: String) {
-        when (id) {
-            "tasbeeh" -> showTasbeeh()
-            "revision" -> showRevision()
-            "notes" -> showNotes()
-            "habits" -> showHabits()
-            "quiz" -> showQuiz()
-            "azkar" -> showAzkar()
-            "quran" -> showQuran()
-            "recite" -> showInfo("التسميع الذكي", "التسميع الصوتي الحقيقي يحتاج محرك تعرف على الكلام واختبارًا على قراءات متعددة. زر المايك وتحليل أخطاء الكلمات والتجويد غير جاهز في هذه النسخة.")
-            "tajweed" -> showInfo("التجويد", "قسم التجويد قيد الإعداد. ستضاف الأحكام مع أمثلة موثوقة وتوضيح أن التقييم الآلي لا يغني عن شيخ متقن.")
-            "seerah" -> showInfo("السيرة النبوية", "سيُبنى هذا القسم على روايات ومراجع معروفة، مع بيان مصدر كل حدث وتجنب القصص غير الثابتة.")
-            "hadith" -> showInfo("الحديث الشريف", "ستعرض الأحاديث مع المصدر ودرجة الحديث وشرح مختصر. لم تُدرج بعد قاعدة بيانات حديثية في هذه النسخة.")
-            "history" -> showInfo("الغزوات والتاريخ", "سيُرتب المحتوى زمنيًا مع مصادره، والتمييز بين الروايات الصحيحة والضعيفة.")
+    private fun normalize(s: String): String =
+        s.lowercase(Locale("ar")).replace(Regex("[\\u064B-\\u065F\\u0670ـ]"), "")
+            .replace("أ", "ا").replace("إ", "ا").replace("آ", "ا").replace("ى", "ي")
+            .replace(Regex("[^\\u0621-\\u064A\\s]"), " ").trim().replace(Regex("\\s+"), " ")
+
+    private fun beginRecognition(status: TextView, live: TextView, ayahViews: List<TextView>) {
+        if (!SpeechRecognizer.isRecognitionAvailable(this)) {
+            status.text = "التعرف الصوتي غير متاح على هذا الجهاز"; return
         }
-    }
-
-
-    private val reciters = listOf(
-        "عبد الرحمن السديس", "سعود الشريم", "علي جابر", "ماهر المعيقلي",
-        "ياسر الدوسري", "عبد الله عواد الجهني", "بندر بليلة", "صلاح البدير",
-        "علي الحذيفي", "أحمد العجمي", "سعد الغامدي", "مشاري العفاسي",
-        "محمد صديق المنشاوي", "محمود خليل الحصري", "عبد الباسط عبد الصمد",
-        "محمد أيوب", "إدريس أبكر", "رعد محمد الكردي", "فارس عباد", "هزاع البلوشي"
-    )
-
-    private fun showQuran() {
-        val scroll = setupPage()
-        heading("القرآن الكريم", "المصحف ومكتبة القرّاء")
-        val prefs = getSharedPreferences("deeni", MODE_PRIVATE)
-        var selected = prefs.getString("selected_reciter", "ماهر المعيقلي") ?: "ماهر المعيقلي"
-        val selectedView = text("القارئ المختار: $selected", 19f, green, true)
-        page.addView(selectedView)
-        addButton("🎧 اختيار القارئ", {
-            AlertDialog.Builder(this)
-                .setTitle("اختر قارئك")
-                .setSingleChoiceItems(reciters.toTypedArray(), reciters.indexOf(selected).coerceAtLeast(0)) { dialog, which ->
-                    selected = reciters[which]
-                    prefs.edit().putString("selected_reciter", selected).apply()
-                    selectedView.text = "القارئ المختار: $selected"
-                    dialog.dismiss()
+        if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(arrayOf(Manifest.permission.RECORD_AUDIO), 77)
+            status.text = "اسمح باستخدام الميكروفون ثم اضغط ابدأ"; return
+        }
+        stopRecognition()
+        recognizer = SpeechRecognizer.createSpeechRecognizer(this)
+        val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+            putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+            putExtra(RecognizerIntent.EXTRA_LANGUAGE, "ar-SA")
+            putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
+            putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 3)
+        }
+        recognizer?.setRecognitionListener(object : RecognitionListener {
+            override fun onReadyForSpeech(params: Bundle?) { status.text = "أستمع إليك الآن…" }
+            override fun onBeginningOfSpeech() { status.text = "تابع القراءة…" }
+            override fun onRmsChanged(rmsdB: Float) {}
+            override fun onBufferReceived(buffer: ByteArray?) {}
+            override fun onEndOfSpeech() { status.text = "أحلل آخر ما التقطته…" }
+            override fun onError(error: Int) {
+                status.text = when(error) {
+                    SpeechRecognizer.ERROR_NO_MATCH -> "لم أتمكن من تمييز الكلمات؛ حاول بوضوح أكثر"
+                    SpeechRecognizer.ERROR_SPEECH_TIMEOUT -> "لم ألتقط قراءة؛ اضغط ابدأ وحاول مجددًا"
+                    SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS -> "إذن الميكروفون غير متاح"
+                    else -> "توقف التعرف الصوتي؛ يمكنك إعادة المحاولة"
                 }
-                .setNegativeButton("إغلاق", null)
-                .show()
+            }
+            override fun onResults(results: Bundle?) {
+                val words = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)?.firstOrNull().orEmpty()
+                renderComparison(words, live, ayahViews)
+                status.text = "انتهت جولة الالتقاط — راجع الكلمات المظللة"
+            }
+            override fun onPartialResults(partialResults: Bundle?) {
+                val words = partialResults?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)?.firstOrNull().orEmpty()
+                renderComparison(words, live, ayahViews)
+                status.text = "متابعة مباشرة للنص الملتقط…"
+            }
+            override fun onEvent(eventType: Int, params: Bundle?) {}
         })
-        addButton("🎙 التسميع بصوتي", {
-            showInfo("التسميع الذكي", "سيكون هذا الزر للتسجيل والتسميع بصوتك. محرك التعرف على التلاوة وتحليل الكلمات والتجويد لم يُدمج بعد، لذلك لن نعرض نتيجة وهمية.")
-        })
-        page.addView(text("طريقة العمل المطلوبة", 20f, ink, true))
-        page.addView(text("عند اكتمال المصحف وربط تسجيلات القارئ بالآيات، ستظهر الآية الحالية بلون مميز، ويتحرك التحديد تلقائيًا مع صوت القارئ إلى الآية التالية. اختيار القارئ محفوظ على جهازك.", 16f))
-        page.addView(text("ملاحظة مهمة: اختيار القارئ وحفظه أصبحا ضمن الواجهة، أما تشغيل التلاوة ومزامنة تظليل الآيات تلقائيًا فما زالا يحتاجان إلى مصدر صوتي موثوق وربط زمني دقيق، ولم يُفعّلا بعد.", 14f, Color.DKGRAY))
-        setContentView(scroll)
+        try { recognizer?.startListening(intent) }
+        catch (_: Exception) { status.text = "تعذر بدء الميكروفون؛ تحقق من الإذن وحاول مجددًا" }
     }
 
-    private fun showInfo(title: String, body: String) {
-        val scroll = setupPage()
-        heading(title, "قسم من أقسام تطبيق ديني")
-        page.addView(text(body, 17f))
-        setContentView(scroll)
+    private fun renderComparison(spoken: String, live: TextView, ayahViews: List<TextView>) {
+        if (spoken.isBlank()) return
+        live.text = "ما التقطه الجهاز:\\n$spoken"
+        val got = normalize(spoken).split(" ").filter { it.isNotBlank() }
+        val expected = expectedWords.map { normalize(it) }
+        var matched = 0
+        for (word in got) if (matched < expected.size && word == expected[matched]) matched++
+        val correctRatio = if (got.isEmpty()) 0 else (matched * 100 / got.size)
+        live.append("\\n\\nتطابق تقريبي: $correctRatio٪")
+        ayahViews.forEachIndexed { index, view ->
+            val rangeStart = fatiha.take(index).sumOf { normalize(it).split(" ").size }
+            val rangeEnd = rangeStart + normalize(fatiha[index]).split(" ").size
+            val color = when {
+                matched >= rangeEnd -> Color.rgb(37, 125, 76)
+                matched > rangeStart -> Color.rgb(168, 112, 25)
+                else -> Color.rgb(53, 49, 40)
+            }
+            val span = SpannableString("﴿${index + 1}﴾  ${fatiha[index]}")
+            span.setSpan(ForegroundColorSpan(color), 0, span.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+            view.text = span
+        }
+    }
+
+    private fun stopRecognition() {
+        try { recognizer?.stopListening(); recognizer?.cancel(); recognizer?.destroy() } catch (_: Exception) {}
+        recognizer = null
+    }
+
+    private fun chooseReader() {
+        android.app.AlertDialog.Builder(this)
+            .setTitle("اختر القارئ")
+            .setSingleChoiceItems(readers.toTypedArray(), readers.indexOf(selectedReader).coerceAtLeast(0)) { dialog, which ->
+                selectedReader = readers[which]
+                getSharedPreferences("deeni", MODE_PRIVATE).edit().putString("reader", selectedReader).apply()
+                dialog.dismiss()
+                if (currentPage == "quran") showQuran()
+            }
+            .setNegativeButton("إغلاق", null).show()
     }
 
     private fun showTasbeeh() {
-        val scroll = setupPage()
-        heading("التسبيح", "عداد بسيط للتسبيح")
-        val countView = text("عدد التسبيحات: $tasbeehCount", 25f, green, true).apply { gravity = Gravity.CENTER }
-        page.addView(countView)
-        addButton("سبّح", { tasbeehCount++; getSharedPreferences("deeni", MODE_PRIVATE).edit().putInt("tasbeeh", tasbeehCount).apply(); countView.text = "عدد التسبيحات: $tasbeehCount" })
-        addButton("إعادة العداد", { tasbeehCount = 0; getSharedPreferences("deeni", MODE_PRIVATE).edit().putInt("tasbeeh", 0).apply(); countView.text = "عدد التسبيحات: 0" })
-        setContentView(scroll)
-    }
-
-    private fun showAzkar() {
-        val scroll = setupPage()
-        heading("الأذكار والأدعية", "أذكار مختارة")
-        page.addView(text("أذكار الصباح والمساء", 21f, green, true))
-        page.addView(text("سُبْحَانَ اللَّهِ وَبِحَمْدِهِ", 23f, ink, true))
-        page.addView(text("لا إله إلا الله وحده لا شريك له، له الملك وله الحمد وهو على كل شيء قدير.", 19f))
-        page.addView(text("أستغفر الله وأتوب إليه.", 21f))
-        page.addView(text("تنبيه: هذه قائمة أولية مختصرة، وستُضاف الأذكار مع تخريجها وعدد مرات التكرار ومراجعة النصوص قبل اعتمادها.", 13f, Color.DKGRAY))
-        setContentView(scroll)
-    }
-
-
-    private fun showRevision() {
-        val scroll = setupPage()
-        heading("الحفظ والمراجعة", "سجل بسيط لمتابعة جلساتك")
-        val countView = text("جلسات المراجعة المكتملة: $reviewCount", 22f, green, true)
-        page.addView(countView)
-        page.addView(text("بعد أن تنتهي من جلسة حفظ أو مراجعة، سجّلها هنا. هذا العداد محلي على جهازك.", 16f))
-        addButton("تسجيل جلسة مكتملة", {
-            reviewCount++
-            getSharedPreferences("deeni", MODE_PRIVATE).edit().putInt("reviews", reviewCount).apply()
-            countView.text = "جلسات المراجعة المكتملة: $reviewCount"
+        base("الأذكار والتسبيح", "اجعل لسانك رطبًا بذكر الله")
+        val count = label("عدد التسبيحات: $tasbeeh", 25f, gold, true).apply { gravity = Gravity.CENTER }
+        root.addView(count)
+        root.addView(button("سُبْحَانَ اللَّهِ  +", true) {
+            tasbeeh++; getSharedPreferences("deeni", MODE_PRIVATE).edit().putInt("tasbeeh", tasbeeh).apply()
+            count.text = "عدد التسبيحات: $tasbeeh"
         })
-        addButton("تصفير السجل", {
-            reviewCount = 0
-            getSharedPreferences("deeni", MODE_PRIVATE).edit().putInt("reviews", 0).apply()
-            countView.text = "جلسات المراجعة المكتملة: 0"
+        root.addView(space(8))
+        root.addView(button("إعادة العداد", false) {
+            tasbeeh = 0; getSharedPreferences("deeni", MODE_PRIVATE).edit().putInt("tasbeeh", 0).apply()
+            count.text = "عدد التسبيحات: 0"
         })
-        setContentView(scroll)
+        root.addView(button("الرئيسية", false) { showHome() })
     }
 
-    private fun showNotes() {
-        val scroll = setupPage()
-        heading("ملاحظاتي", "احفظ فائدة أو خطة مراجعة")
-        val editor = EditText(this).apply {
-            setText(savedNote)
-            minLines = 5
-            gravity = Gravity.TOP or Gravity.RIGHT
-            textSize = 17f
-            hint = "اكتب ملاحظتك هنا..."
-            setPadding(14, 14, 14, 14)
-        }
-        page.addView(editor, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT))
-        addButton("حفظ الملاحظة", {
-            savedNote = editor.text.toString()
-            getSharedPreferences("deeni", MODE_PRIVATE).edit().putString("note", savedNote).apply()
-            editor.clearFocus()
-            editor.hint = "تم حفظ الملاحظة على جهازك"
-        })
-        setContentView(scroll)
+    private fun showComing(title: String) {
+        base(title, "هذا القسم ضمن خطة التطوير")
+        root.addView(label("لن نضع محتوى غير موثق أو أزرارًا وهمية. سيُضاف هذا القسم بعد توفير مصادر موثوقة واختبار وظائفه.", 16f, cream))
+        root.addView(button("الرئيسية", true) { showHome() })
     }
 
-
-    private fun showHabits() {
-        val scroll = setupPage()
-        heading("وردك اليومي", "قائمة متابعة شخصية تتجدد كل يوم")
-        val prefs = getSharedPreferences("deeni", MODE_PRIVATE)
-        val progress = text("", 20f, green, true)
-        page.addView(progress)
-        val checks = mutableListOf<CheckBox>()
-        fun updateProgress() {
-            val done = checks.count { it.isChecked }
-            progress.text = "إنجاز اليوم: $done من ${dailyTasks.size}"
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == 77 && grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            Toast.makeText(this, "تم السماح بالميكروفون. اضغط ابدأ التسميع.", Toast.LENGTH_LONG).show()
         }
-        dailyTasks.forEachIndexed { index, task ->
-            val check = CheckBox(this).apply {
-                text = task
-                textSize = 17f
-                setTextColor(ink)
-                isChecked = prefs.getBoolean("habit_$index", false)
-                buttonTintList = android.content.res.ColorStateList.valueOf(green)
-                setOnCheckedChangeListener { _, checked ->
-                    prefs.edit().putBoolean("habit_$index", checked).apply()
-                    updateProgress()
-                }
-            }
-            checks.add(check)
-            page.addView(check)
-        }
-        updateProgress()
-        addButton("إعادة ضبط قائمة اليوم", {
-            checks.forEachIndexed { index, check ->
-                check.isChecked = false
-                prefs.edit().putBoolean("habit_$index", false).apply()
-            }
-            updateProgress()
-        })
-        page.addView(text("هذه القائمة للتذكير الشخصي وليست حكمًا على مستوى الالتزام أو العبادة.", 13f, Color.DKGRAY))
-        setContentView(scroll)
     }
 
-    private fun showQuiz() {
-        val scroll = setupPage()
-        heading("المسابقة الإسلامية", "أسئلة قصيرة — اختر إجابة واحدة")
-        if (quizIndex >= questions.size) {
-            page.addView(text("انتهت الجولة! نتيجتك: $quizScore من ${questions.size}", 23f, green, true))
-            addButton("إعادة المسابقة", { quizIndex = 0; quizScore = 0; showQuiz() })
-            setContentView(scroll)
-            return
-        }
-        val q = questions[quizIndex]
-        page.addView(text("السؤال ${quizIndex + 1} من ${questions.size}", 14f, green))
-        page.addView(text(q.prompt, 22f, ink, true))
-        q.answers.forEachIndexed { index, answer ->
-            addButton(answer, {
-                val correct = index == q.correct
-                if (correct) quizScore++
-                quizIndex++
-                showQuizFeedback(correct, q.note)
-            })
-        }
-        setContentView(scroll)
-    }
-
-    private fun showQuizFeedback(correct: Boolean, note: String) {
-        val scroll = setupPage()
-        heading("نتيجة الإجابة", if (correct) "إجابة صحيحة" else "حاول مرة أخرى")
-        page.addView(text(note, 18f))
-        addButton("السؤال التالي", ::showQuiz)
-        setContentView(scroll)
-    }
+    override fun onStop() { stopRecognition(); super.onStop() }
 }
