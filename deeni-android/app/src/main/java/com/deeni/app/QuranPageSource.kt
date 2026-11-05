@@ -25,7 +25,7 @@ object QuranPageSource {
             check(envelope.optString("code") == "200") { "Quran service response was not successful" }
             val data = envelope.getJSONObject("data")
             val text = QuranPageValidation.ayahText(surah, ayah, data.getString("text"))
-            val page = QuranPageValidation.pageNumber(data.getInt("page"), data.getInt("page"))
+            val page = QuranPageValidation.pageNumber(data.getInt("page"))
             text to page
         } finally {
             connection.disconnect()
