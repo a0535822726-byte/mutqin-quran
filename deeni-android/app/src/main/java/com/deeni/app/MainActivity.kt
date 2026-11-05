@@ -74,6 +74,7 @@ class MainActivity : Activity() {
     private var playbackStatus: TextView? = null
     private var pendingHighlight: Pair<Int, Int>? = null
     private var selectedAyah: Pair<Int, Int>? = null
+    private var selectedAyahText: String? = null
     private var selectedReader = "ماهر المعيقلي"
     private var tasbeeh = 0
     private val readers = listOf("ماهر المعيقلي", "عبد الرحمن السديس", "ياسر الدوسري", "مشاري العفاسي", "محمود خليل الحصري", "محمد صديق المنشاوي", "عبد الباسط عبد الصمد", "سعد الغامدي", "أحمد العجمي", "علي جابر")
@@ -275,6 +276,7 @@ class MainActivity : Activity() {
     private fun showSelectedAyah(surah: Int, ayah: Int) {
         if (!QuranReference.isValid(surah, ayah)) return
         selectedAyah = surah to ayah
+        selectedAyahText = null
         ayahStatus?.text = "جارٍ تحميل الآية $surah:$ayah…"
         Thread {
             val result = QuranPageSource.loadAyahDetails(surah, ayah)
@@ -282,6 +284,7 @@ class MainActivity : Activity() {
                 if (currentPage != "quran") return@runOnUiThread
                 if (result.isSuccess) {
                     val (text, page) = result.getOrThrow()
+                    selectedAyahText = text
                     ayahStatus?.text = "الآية $surah:$ayah\n$text"
                     if (page != mushafPage) {
                         pendingHighlight = surah to ayah
@@ -559,7 +562,16 @@ class MainActivity : Activity() {
 
     private fun renderTranscript(spoken: String, live: TextView) {
         if (spoken.isBlank()) return
-        live.text = "النص الذي التقطه الجهاز:\n$spoken\n\nتنبيه: هذا تفريغ آلي للصوت فقط، وليس تصحيحًا قرآنيًا موثوقًا ولا يحدد موضع الخطأ."
+        val reference = selectedAyahText
+        if (reference.isNullOrBlank()) {
+            live.text = "النص الذي التقطه الجهاز:\n$spoken\n\nاختر آية من المصحف أولًا لتفعيل المقارنة النصية الاسترشادية. هذا ليس تصحيحًا قرآنيًا."
+            return
+        }
+        val comparison = QuranTextComparison.compare(reference, spoken)
+        val missing = comparison.missingFromTranscript.take(8).joinToString("، ").ifBlank { "لا توجد" }
+        val extra = comparison.extraInTranscript.take(8).joinToString("، ").ifBlank { "لا توجد" }
+        val matched = "\${comparison.matchedWordCount} من \${comparison.expectedWordCount}"
+        live.text = "النص الذي التقطه الجهاز:\n$spoken\n\nمقارنة نصية مبدئية للآية المحددة:\nكلمات لم تظهر في النص الملتقط: $missing\nكلمات إضافية في النص الملتقط: $extra\nالكلمات المتطابقة بالترتيب: $matched\n\nتنبيه مهم: قد يخطئ محرك التعرف الصوتي في سماع القرآن؛ هذه فروق بين نصين فقط، وليست حكمًا بأنك أخطأت في التلاوة، ولا تقيس التجويد أو مخارج الحروف."
     }
 
     private fun stopRecognition() {
