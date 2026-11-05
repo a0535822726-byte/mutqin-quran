@@ -365,6 +365,7 @@ class MainActivity : Activity() {
         root.addView(space(14))
         root.addView(label("التسميع الصوتي", 20f, cream, true))
         root.addView(label("التعرف الصوتي العام قد يخطئ في ألفاظ القرآن؛ هذه الأداة ليست محركًا متخصصًا ولا تصحح التجويد.", 13f, muted))
+        root.addView(label("خصوصية الصوت: لا يحفظ تطبيق ديني تسجيلًا صوتيًا. قد تعالج خدمة التعرف الصوتي في الهاتف الكلام وفق إعداداتها وسياسة مزودها؛ أوقف الميكروفون بعد الانتهاء.", 12f, muted))
         val status = label("تفريغ صوتي عام — ليس تصحيحًا للقرآن", 14f, gold, true)
         root.addView(status)
         val live = TextView(this).apply { text = "النص الملتقط يظهر هنا"; textSize = 17f; setTextColor(cream); background = shape(panel, 16f); setPadding(14, 14, 14, 14) }
