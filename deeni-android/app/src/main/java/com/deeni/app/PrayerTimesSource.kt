@@ -42,13 +42,13 @@ object PrayerTimesSource {
             )
             val values = labels.map { (arabic, key) ->
                 val raw = timings.optString(key, "")
-                check(raw.isNotBlank() && raw != "null") { "Missing prayer time: $key" }
-                arabic to raw.substringBefore(" ").trim()
+                arabic to PrayerTimesValidation.time(raw, key)
             }
             val meta = data.getJSONObject("meta")
             val latitude = meta.getDouble("latitude")
             val longitude = meta.getDouble("longitude")
-            PrayerTimesResult("الميلادي: $gregorian   •   الهجري: $hijri", values, latitude, longitude)
+            val (validLatitude, validLongitude) = PrayerTimesValidation.coordinates(latitude, longitude)
+            PrayerTimesResult("الميلادي: $gregorian   •   الهجري: $hijri", values, validLatitude, validLongitude)
         } finally {
             connection.disconnect()
         }
