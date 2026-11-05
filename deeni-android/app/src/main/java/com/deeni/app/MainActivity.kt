@@ -496,12 +496,7 @@ class MainActivity : Activity() {
         mushafWebView?.loadDataWithBaseURL("https://appassets.androidplatform.net/", mushafHtml(page), "text/html", "UTF-8", null)
     }
 
-    private fun normalize(s: String): String =
-        s.lowercase(Locale("ar")).replace(Regex("[\\u064B-\\u065F\\u0670ـ]"), "")
-            .replace("أ", "ا").replace("إ", "ا").replace("آ", "ا").replace("ى", "ي")
-            .replace(Regex("[^\\u0621-\\u064A\\s]"), " ").trim().replace(Regex("\\s+"), " ")
-
-    private fun beginRecognition(status: TextView, live: TextView, ayahViews: List<TextView>) {
+    private fun beginRecognition(status: TextView, live: TextView) {
         if (!SpeechRecognizer.isRecognitionAvailable(this)) {
             status.text = "التعرف الصوتي غير متاح على هذا الجهاز"; return
         }
@@ -533,7 +528,7 @@ class MainActivity : Activity() {
             }
             override fun onResults(results: Bundle?) {
                 val words = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)?.firstOrNull().orEmpty()
-                renderComparison(words, live, ayahViews)
+                renderTranscript(words, live)
                 status.text = "انتهت جولة الالتقاط — راجع النص المسموع بنفسك"
             }
             override fun onPartialResults(partialResults: Bundle?) {
@@ -547,7 +542,7 @@ class MainActivity : Activity() {
         catch (_: Exception) { status.text = "تعذر بدء الميكروفون؛ تحقق من الإذن وحاول مجددًا" }
     }
 
-    private fun renderComparison(spoken: String, live: TextView, ayahViews: List<TextView>) {
+    private fun renderTranscript(spoken: String, live: TextView) {
         if (spoken.isBlank()) return
         live.text = "النص الذي التقطه الجهاز:\n$spoken\n\nتنبيه: هذا تفريغ آلي للصوت فقط، وليس تصحيحًا قرآنيًا موثوقًا ولا يحدد موضع الخطأ."
     }
