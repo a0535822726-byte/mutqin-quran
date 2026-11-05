@@ -1263,7 +1263,7 @@ class MainActivity : Activity() {
         root.addView(button("الرئيسية", false) { showHome() })
         root.post {
             Thread {
-                val result = PrayerTimesSource.load(city, country)
+                val result = PrayerTimesSource.load(city, country, prefs.getInt("prayer_method", 4))
                 runOnUiThread {
                     if (currentPage != "qibla") return@runOnUiThread
                     if (result.isSuccess) {
