@@ -1081,7 +1081,7 @@ class MainActivity : Activity() {
 
     private fun showSavedAyahs() {
         currentPage = "saved_ayahs"
-        base("الآيات المحفوظة", "آيات أضفتها من نتائج البحث لتعود إليها بسهولة")
+        base("الآيات المحفوظة", "آيات حفظتها من المصحف أو من نتائج البحث")
         val prefs = getSharedPreferences("deeni", MODE_PRIVATE)
         val saved = prefs.getStringSet("saved_ayahs", emptySet())?.toList()
             ?.mapNotNull { value ->
@@ -1091,7 +1091,7 @@ class MainActivity : Activity() {
                 if (surah != null && ayah != null && QuranReference.isValid(surah, ayah)) surah to ayah else null
             }?.sortedWith(compareBy<Pair<Int, Int>> { it.first }.thenBy { it.second }) ?: emptyList()
         if (saved.isEmpty()) {
-            root.addView(label("لا توجد آيات محفوظة. ابحث في القرآن ثم اضغط حفظ الآية.", 15f, muted))
+            root.addView(label("لا توجد آيات محفوظة. اضغط على آية في المصحف أو احفظها من نتائج البحث.", 15f, muted))
         } else {
             saved.forEach { item ->
                 root.addView(label("السورة رقم ${item.first} • الآية ${item.second}", 16f, gold, true))
