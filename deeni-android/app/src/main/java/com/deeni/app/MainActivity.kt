@@ -31,12 +31,33 @@ import android.widget.*
 import java.util.Locale
 
 class MainActivity : Activity() {
-    private val bg = Color.rgb(9, 28, 25)
-    private val panel = Color.rgb(18, 48, 42)
-    private val panel2 = Color.rgb(25, 61, 53)
-    private val gold = Color.rgb(218, 183, 111)
-    private val cream = Color.rgb(246, 241, 226)
-    private val muted = Color.rgb(174, 194, 184)
+    private var lightTheme = false
+    private var bg = Color.rgb(9, 28, 25)
+    private var panel = Color.rgb(18, 48, 42)
+    private var panel2 = Color.rgb(25, 61, 53)
+    private var gold = Color.rgb(218, 183, 111)
+    private var cream = Color.rgb(246, 241, 226)
+    private var muted = Color.rgb(174, 194, 184)
+
+    private fun applyTheme() {
+        if (lightTheme) {
+            bg = Color.rgb(246, 243, 234)
+            panel = Color.rgb(255, 255, 250)
+            panel2 = Color.rgb(232, 224, 204)
+            gold = Color.rgb(126, 91, 35)
+            cream = Color.rgb(37, 53, 46)
+            muted = Color.rgb(94, 111, 101)
+        } else {
+            bg = Color.rgb(9, 28, 25)
+            panel = Color.rgb(18, 48, 42)
+            panel2 = Color.rgb(25, 61, 53)
+            gold = Color.rgb(218, 183, 111)
+            cream = Color.rgb(246, 241, 226)
+            muted = Color.rgb(174, 194, 184)
+        }
+        window.statusBarColor = bg
+        window.navigationBarColor = bg
+    }
     private lateinit var root: LinearLayout
     private var recognizer: SpeechRecognizer? = null
     private var currentPage = "home"
@@ -67,9 +88,9 @@ class MainActivity : Activity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        window.statusBarColor = bg
-        window.navigationBarColor = bg
         window.decorView.systemUiVisibility = 0
+        lightTheme = getSharedPreferences("deeni", MODE_PRIVATE).getBoolean("light_theme", false)
+        applyTheme()
         tasbeeh = getSharedPreferences("deeni", MODE_PRIVATE).getInt("tasbeeh", 0)
         selectedReader = getSharedPreferences("deeni", MODE_PRIVATE).getString("reader", readers[0]) ?: readers[0]
         showHome()
@@ -139,6 +160,13 @@ class MainActivity : Activity() {
         root.addView(hero)
         root.addView(space(18))
         root.addView(label("اكتشف ديني", 20f, cream, true))
+        root.addView(button(if (lightTheme) "التبديل إلى الوضع الداكن" else "التبديل إلى الوضع الفاتح", false) {
+            lightTheme = !lightTheme
+            getSharedPreferences("deeni", MODE_PRIVATE).edit().putBoolean("light_theme", lightTheme).apply()
+            applyTheme()
+            showHome()
+        })
+        root.addView(space(10))
         card("التسميع المباشر", "اقرأ وتابع الكلمات أثناء التسميع", "🎙") { showQuran(true) }
         card("البحث في القرآن", "ابحث عن كلمة أو عبارة في الآيات", "⌕") { showQuranSearch() }
         card("الآيات المحفوظة", "اجمع الآيات التي تريد الرجوع إليها", "☆") { showSavedAyahs() }
