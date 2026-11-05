@@ -7,6 +7,7 @@ import android.graphics.Typeface
 import android.view.Gravity
 import android.view.View
 import android.widget.Button
+import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
@@ -19,6 +20,8 @@ class MainActivity : Activity() {
     private var tasbeehCount = 0
     private var quizIndex = 0
     private var quizScore = 0
+    private var reviewCount = 0
+    private var savedNote = ""
 
     private data class Question(val prompt: String, val answers: List<String>, val correct: Int, val note: String)
     private val questions = listOf(
@@ -33,6 +36,10 @@ class MainActivity : Activity() {
         window.statusBarColor = paper
         window.navigationBarColor = paper
         window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR
+        val prefs = getSharedPreferences("deeni", MODE_PRIVATE)
+        tasbeehCount = prefs.getInt("tasbeeh", 0)
+        reviewCount = prefs.getInt("reviews", 0)
+        savedNote = prefs.getString("note", "") ?: ""
         showHome()
     }
 
@@ -100,7 +107,9 @@ class MainActivity : Activity() {
             Triple("الأذكار والأدعية", "أذكار يومية مختارة", "azkar"),
             Triple("الغزوات والتاريخ", "أحداث السيرة والتاريخ", "history"),
             Triple("الألعاب والمسابقات", "أسئلة إسلامية تفاعلية", "quiz"),
-            Triple("التسبيح", "عداد تسبيح يحفظ العدد أثناء فتح الصفحة", "tasbeeh")
+            Triple("التسبيح", "عداد تسبيح مع حفظ العدد", "tasbeeh"),
+            Triple("الحفظ والمراجعة", "سجل جلسات المراجعة", "revision"),
+            Triple("ملاحظاتي", "احفظ فوائدك وخططك", "notes")
         )
         sections.forEach { item ->
             val card = LinearLayout(this).apply {
@@ -124,6 +133,8 @@ class MainActivity : Activity() {
     private fun openSection(id: String) {
         when (id) {
             "tasbeeh" -> showTasbeeh()
+            "revision" -> showRevision()
+            "notes" -> showNotes()
             "quiz" -> showQuiz()
             "azkar" -> showAzkar()
             "quran" -> showInfo("القرآن الكريم", "هذه مساحة قسم القرآن. النسخة الحالية لا تتضمن بعد نص المصحف الكامل أو صفحات المصحف المعتمدة. يجري تجهيز مصدر قرآني موثوق قبل إدراجه حتى لا تظهر آية بخطأ.")
@@ -147,8 +158,8 @@ class MainActivity : Activity() {
         heading("التسبيح", "عداد بسيط للتسبيح")
         val countView = text("عدد التسبيحات: $tasbeehCount", 25f, green, true).apply { gravity = Gravity.CENTER }
         page.addView(countView)
-        addButton("سبّح", { tasbeehCount++; countView.text = "عدد التسبيحات: $tasbeehCount" })
-        addButton("إعادة العداد", { tasbeehCount = 0; countView.text = "عدد التسبيحات: 0" })
+        addButton("سبّح", { tasbeehCount++; getSharedPreferences("deeni", MODE_PRIVATE).edit().putInt("tasbeeh", tasbeehCount).apply(); countView.text = "عدد التسبيحات: $tasbeehCount" })
+        addButton("إعادة العداد", { tasbeehCount = 0; getSharedPreferences("deeni", MODE_PRIVATE).edit().putInt("tasbeeh", 0).apply(); countView.text = "عدد التسبيحات: 0" })
         setContentView(scroll)
     }
 
@@ -160,6 +171,47 @@ class MainActivity : Activity() {
         page.addView(text("لا إله إلا الله وحده لا شريك له، له الملك وله الحمد وهو على كل شيء قدير.", 19f))
         page.addView(text("أستغفر الله وأتوب إليه.", 21f))
         page.addView(text("تنبيه: هذه قائمة أولية مختصرة، وستُضاف الأذكار مع تخريجها وعدد مرات التكرار ومراجعة النصوص قبل اعتمادها.", 13f, Color.DKGRAY))
+        setContentView(scroll)
+    }
+
+
+    private fun showRevision() {
+        val scroll = setupPage()
+        heading("الحفظ والمراجعة", "سجل بسيط لمتابعة جلساتك")
+        val countView = text("جلسات المراجعة المكتملة: $reviewCount", 22f, green, true)
+        page.addView(countView)
+        page.addView(text("بعد أن تنتهي من جلسة حفظ أو مراجعة، سجّلها هنا. هذا العداد محلي على جهازك.", 16f))
+        addButton("تسجيل جلسة مكتملة", {
+            reviewCount++
+            getSharedPreferences("deeni", MODE_PRIVATE).edit().putInt("reviews", reviewCount).apply()
+            countView.text = "جلسات المراجعة المكتملة: $reviewCount"
+        })
+        addButton("تصفير السجل", {
+            reviewCount = 0
+            getSharedPreferences("deeni", MODE_PRIVATE).edit().putInt("reviews", 0).apply()
+            countView.text = "جلسات المراجعة المكتملة: 0"
+        })
+        setContentView(scroll)
+    }
+
+    private fun showNotes() {
+        val scroll = setupPage()
+        heading("ملاحظاتي", "احفظ فائدة أو خطة مراجعة")
+        val editor = EditText(this).apply {
+            setText(savedNote)
+            minLines = 5
+            gravity = Gravity.TOP or Gravity.RIGHT
+            textSize = 17f
+            hint = "اكتب ملاحظتك هنا..."
+            setPadding(14, 14, 14, 14)
+        }
+        page.addView(editor, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT))
+        addButton("حفظ الملاحظة", {
+            savedNote = editor.text.toString()
+            getSharedPreferences("deeni", MODE_PRIVATE).edit().putString("note", savedNote).apply()
+            editor.clearFocus()
+            editor.hint = "تم حفظ الملاحظة على جهازك"
+        })
         setContentView(scroll)
     }
 
