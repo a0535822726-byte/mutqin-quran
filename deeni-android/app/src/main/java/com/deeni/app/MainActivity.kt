@@ -258,6 +258,12 @@ class MainActivity : Activity() {
                 }
             }
         }
+        @JavascriptInterface
+        fun onPageError() {
+            runOnUiThread {
+                pageStatus?.text = "تعذر تحميل صفحة المصحف $mushafPage. تحقق من الإنترنت ثم أعد المحاولة."
+            }
+        }
     }
 
     private fun highlightMushafAyah(surah: Int, ayah: Int) {
@@ -317,7 +323,7 @@ class MainActivity : Activity() {
             webViewClient = object : WebViewClient() {
                 override fun shouldOverrideUrlLoading(view: WebView?, url: String?): Boolean = true
                 override fun onPageFinished(view: WebView?, url: String?) {
-                    pageStatus?.text = "صفحة $mushafPage من 604 • اضغط على الآية لتحديدها"
+                    // JavaScript bridge reports success only after the SVG is mounted.
                 }
             }
         }
@@ -456,6 +462,7 @@ class MainActivity : Activity() {
                     if(window.DeeniMushaf) window.DeeniMushaf.onPageReady();
                   }catch(error){
                     host.innerHTML='<p style="font:18px sans-serif;color:#704b20;text-align:center;padding:24px">تعذر تحميل صفحة المصحف. تحقق من الإنترنت ثم أعد المحاولة من التطبيق.</p>';
+                    if(window.DeeniMushaf) window.DeeniMushaf.onPageError();
                   }
                 })();
               </script>
