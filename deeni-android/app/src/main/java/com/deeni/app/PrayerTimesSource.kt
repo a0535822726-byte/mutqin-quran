@@ -13,12 +13,13 @@ data class PrayerTimesResult(
 )
 
 object PrayerTimesSource {
-    fun load(city: String, country: String = "Saudi Arabia"): Result<PrayerTimesResult> = runCatching {
+    fun load(city: String, country: String = "Saudi Arabia", method: Int = 4): Result<PrayerTimesResult> = runCatching {
         require(city.isNotBlank()) { "City is required" }
         require(country.isNotBlank()) { "Country is required" }
+        require(method in setOf(1, 2, 3, 4, 5, 8, 9, 10, 11, 13, 15)) { "Unsupported calculation method" }
         val encodedCity = URLEncoder.encode(city, "UTF-8")
         val encodedCountry = URLEncoder.encode(country, "UTF-8")
-        val endpoint = "https://api.aladhan.com/v1/timingsByCity?city=$encodedCity&country=$encodedCountry&method=4"
+        val endpoint = "https://api.aladhan.com/v1/timingsByCity?city=$encodedCity&country=$encodedCountry&method=$method"
         val connection = URL(endpoint).openConnection() as HttpURLConnection
         connection.requestMethod = "GET"
         connection.connectTimeout = 12000
