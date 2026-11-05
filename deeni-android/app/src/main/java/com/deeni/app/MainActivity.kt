@@ -96,6 +96,22 @@ class MainActivity : Activity() {
         showHome()
     }
 
+    override fun onDestroy() {
+        stopRecognition()
+        stopQuranAudio()
+        stopQiblaSensor()
+        mushafWebView?.let { view ->
+            try {
+                view.stopLoading()
+                view.removeJavascriptInterface("DeeniMushaf")
+                view.loadUrl("about:blank")
+                view.destroy()
+            } catch (_: Exception) {}
+        }
+        mushafWebView = null
+        super.onDestroy()
+    }
+
     @Deprecated("Use the platform back dispatcher on newer Android versions")
     override fun onBackPressed() {
         if (currentPage != "home") {
