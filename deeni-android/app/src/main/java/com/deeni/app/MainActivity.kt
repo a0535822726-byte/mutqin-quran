@@ -127,6 +127,7 @@ class MainActivity : Activity() {
         card("الأذكار", "أذكار مختارة مع عداد لكل ذكر", "۞") { showAdhkar() }
         card("المسابقات الإسلامية", "اختبر معلوماتك في القرآن والسيرة والحديث", "🏆") { showQuiz() }
         card("أسماء الله الحسنى", "معانٍ مختصرة لأسماء الله الحسنى", "✧") { showNames() }
+        card("مواقيت الصلاة", "اعرض مواقيت الصلاة حسب مدينتك", "◷") { showPrayerTimes() }
         root.addView(label("المصحف يعرض نص الصفحات عند الاتصال بالإنترنت. بعض الأدوات المتقدمة مثل التسميع المتخصص ومزامنة القراء ما زالت تحتاج محركًا واختبارات إضافية.", 12f, muted))
     }
 
@@ -564,6 +565,68 @@ class MainActivity : Activity() {
             }
         })
         root.addView(button("فتح المصحف", false) { showQuran() })
+        root.addView(button("الرئيسية", false) { showHome() })
+    }
+
+    private fun showPrayerTimes() {
+        currentPage = "prayer_times"
+        base("مواقيت الصلاة", "المواقيت تُجلب حسب المدينة وطريقة الحساب المختارة")
+        val city = EditText(this).apply {
+            setText(getSharedPreferences("deeni", MODE_PRIVATE).getString("prayer_city", "أبو عريش") ?: "أبو عريش")
+            hint = "اسم المدينة بالإنجليزية، مثال: Abu Arish"
+            textSize = 16f
+            setTextColor(cream)
+            setHintTextColor(muted)
+            gravity = Gravity.RIGHT
+            setPadding(14, 14, 14, 14)
+            background = shape(panel, 16f)
+        }
+        root.addView(label("المدينة", 15f, gold, true))
+        root.addView(city)
+        root.addView(label("اكتب اسم المدينة بالإنجليزية لضمان تعرف خدمة المواقيت عليها.", 12f, muted))
+        val result = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        root.addView(result)
+        root.addView(button("عرض مواقيت اليوم", true) {
+            val name = city.text.toString().trim()
+            if (name.isBlank()) {
+                Toast.makeText(this, "اكتب اسم المدينة أولًا", Toast.LENGTH_SHORT).show()
+            } else {
+                getSharedPreferences("deeni", MODE_PRIVATE).edit().putString("prayer_city", name).apply()
+                result.removeAllViews()
+                result.addView(label("جارٍ جلب المواقيت…", 15f, gold))
+                Thread {
+                    val response = PrayerTimesSource.load(name)
+                    runOnUiThread {
+                        if (currentPage != "prayer_times") return@runOnUiThread
+                        result.removeAllViews()
+                        if (response.isSuccess) {
+                            val data = response.getOrThrow()
+                            result.addView(label(data.dateLabel, 14f, muted))
+                            data.times.forEach { item ->
+                                val row = LinearLayout(this).apply {
+                                    orientation = LinearLayout.HORIZONTAL
+                                    gravity = Gravity.CENTER_VERTICAL
+                                    setPadding(14, 10, 14, 10)
+                                    background = shape(panel, 14f)
+                                }
+                                val prayer = label(item.first, 17f, cream, true)
+                                prayer.gravity = Gravity.RIGHT or Gravity.CENTER_VERTICAL
+                                val time = label(item.second, 19f, gold, true)
+                                time.gravity = Gravity.LEFT or Gravity.CENTER_VERTICAL
+                                row.addView(prayer, LinearLayout.LayoutParams(0, -2, 1f))
+                                row.addView(time, LinearLayout.LayoutParams(0, -2, 1f))
+                                val lp = LinearLayout.LayoutParams(-1, -2)
+                                lp.bottomMargin = 7
+                                result.addView(row, lp)
+                            }
+                            result.addView(label("المصدر: خدمة مواقيت الصلاة عبر الإنترنت. تحقق من إعدادات الجهة الرسمية في بلدك عند اختلاف التوقيت أو طريقة الحساب.", 12f, muted))
+                        } else {
+                            result.addView(label("تعذر جلب المواقيت. تحقق من اسم المدينة والاتصال بالإنترنت.", 14f, gold))
+                        }
+                    }
+                }.start()
+            }
+        })
         root.addView(button("الرئيسية", false) { showHome() })
     }
 
