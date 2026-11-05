@@ -250,6 +250,14 @@ class MainActivity : Activity() {
             getSharedPreferences("deeni", MODE_PRIVATE).edit().putInt("mushaf_page", mushafPage).apply()
             Toast.makeText(this, "تم حفظ الصفحة $mushafPage", Toast.LENGTH_SHORT).show()
         })
+        root.addView(button("إضافة الصفحة إلى العلامات المرجعية", false) {
+            val prefs = getSharedPreferences("deeni", MODE_PRIVATE)
+            val saved = prefs.getStringSet("mushaf_bookmarks", emptySet())?.toMutableSet() ?: mutableSetOf()
+            saved.add(mushafPage.toString())
+            prefs.edit().putStringSet("mushaf_bookmarks", saved).apply()
+            Toast.makeText(this, "أضيفت الصفحة $mushafPage إلى العلامات", Toast.LENGTH_SHORT).show()
+        })
+        root.addView(button("عرض العلامات المرجعية", false) { showMushafBookmarks() })
         root.addView(button("اختيار سورة وتشغيل تلاوة القارئ", true) { showSurahPicker() })
         playbackStatus = label("التلاوة متوقفة", 13f, muted)
         root.addView(playbackStatus!!)
@@ -873,6 +881,32 @@ class MainActivity : Activity() {
             }
         })
         root.addView(button("فتح المصحف", false) { showQuran() })
+        root.addView(button("الرئيسية", false) { showHome() })
+    }
+
+    private fun showMushafBookmarks() {
+        currentPage = "mushaf_bookmarks"
+        base("علاماتي في المصحف", "صفحات حفظتها للرجوع إليها")
+        val prefs = getSharedPreferences("deeni", MODE_PRIVATE)
+        val pages = prefs.getStringSet("mushaf_bookmarks", emptySet())?.mapNotNull { it.toIntOrNull() }?.distinct()?.sorted() ?: emptyList()
+        if (pages.isEmpty()) {
+            root.addView(label("لا توجد صفحات محفوظة بعد. افتح المصحف ثم أضف الصفحة إلى العلامات المرجعية.", 15f, muted))
+        } else {
+            pages.forEach { page ->
+                root.addView(button("فتح صفحة $page", false) {
+                    mushafPage = page
+                    getSharedPreferences("deeni", MODE_PRIVATE).edit().putInt("mushaf_page", page).apply()
+                    showQuran()
+                })
+                root.addView(button("حذف علامة الصفحة $page", false) {
+                    val updated = prefs.getStringSet("mushaf_bookmarks", emptySet())?.toMutableSet() ?: mutableSetOf()
+                    updated.remove(page.toString())
+                    prefs.edit().putStringSet("mushaf_bookmarks", updated).apply()
+                    showMushafBookmarks()
+                })
+            }
+        }
+        root.addView(button("العودة للمصحف", true) { showQuran() })
         root.addView(button("الرئيسية", false) { showHome() })
     }
 
