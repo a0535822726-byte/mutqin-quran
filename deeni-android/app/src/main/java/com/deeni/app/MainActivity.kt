@@ -1248,7 +1248,7 @@ class MainActivity : Activity() {
                         val bearing = qiblaBearing(data.latitude, data.longitude)
                         status.text = "اتجاه القبلة: ${"%.1f".format(Locale.US, bearing)}° من الشمال الحقيقي"
                         compass.setDirection(bearing.toFloat(), 0f)
-                        startQiblaSensor(compass, bearing.toFloat())
+                        startQiblaSensor(compass, bearing.toFloat(), data.latitude, data.longitude)
                     } else {
                         status.text = "تعذر تحديد اتجاه القبلة. تحقق من المدينة والإنترنت."
                     }
