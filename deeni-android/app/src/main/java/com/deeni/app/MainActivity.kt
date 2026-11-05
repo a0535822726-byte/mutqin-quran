@@ -346,9 +346,9 @@ class MainActivity : Activity() {
             } else {
                 val prefs = getSharedPreferences("deeni", MODE_PRIVATE)
                 val saved = prefs.getStringSet("saved_ayahs", emptySet())?.toMutableSet() ?: mutableSetOf()
-                saved.add("\${selected.first}:\${selected.second}")
+                saved.add("${selected.first}:${selected.second}")
                 prefs.edit().putStringSet("saved_ayahs", saved).apply()
-                Toast.makeText(this, "تم حفظ الآية \${selected.first}:\${selected.second}", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "تم حفظ الآية ${selected.first}:${selected.second}", Toast.LENGTH_SHORT).show()
             }
         })
         root.addView(space(10))
