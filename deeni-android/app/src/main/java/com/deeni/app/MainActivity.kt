@@ -2,6 +2,7 @@ package com.deeni.app
 
 import android.Manifest
 import android.hardware.Sensor
+import android.hardware.GeomagneticField
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
@@ -1228,7 +1229,7 @@ class MainActivity : Activity() {
                         val bearing = qiblaBearing(data.latitude, data.longitude)
                         status.text = "اتجاه القبلة: ${"%.1f".format(Locale.US, bearing)}° من الشمال الحقيقي"
                         compass.setDirection(bearing.toFloat(), 0f)
-                        startQiblaSensor(compass, bearing.toFloat())
+                        startQiblaSensor(compass, bearing.toFloat(), data.latitude, data.longitude)
                     } else {
                         status.text = "تعذر تحديد المدينة. افتح مواقيت الصلاة وأدخل اسم المدينة بالإنجليزية."
                     }
@@ -1267,7 +1268,7 @@ class MainActivity : Activity() {
         return (Math.toDegrees(kotlin.math.atan2(y, x)) + 360.0) % 360.0
     }
 
-    private fun startQiblaSensor(compass: QiblaCompassView, bearing: Float) {
+    private fun startQiblaSensor(compass: QiblaCompassView, bearing: Float, latitude: Double, longitude: Double) {
         stopQiblaSensor()
         val manager = getSystemService(SENSOR_SERVICE) as SensorManager
         val sensor = manager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR)
@@ -1275,6 +1276,8 @@ class MainActivity : Activity() {
             compass.setDirection(bearing, 0f)
             return
         }
+        val geomagneticField = GeomagneticField(latitude.toFloat(), longitude.toFloat(), 0f, System.currentTimeMillis())
+        val declination = geomagneticField.declination
         val listener = object : SensorEventListener {
             override fun onSensorChanged(event: SensorEvent) {
                 if (event.sensor.type != Sensor.TYPE_ROTATION_VECTOR) return
@@ -1282,8 +1285,9 @@ class MainActivity : Activity() {
                 val orientation = FloatArray(3)
                 SensorManager.getRotationMatrixFromVector(rotation, event.values)
                 SensorManager.getOrientation(rotation, orientation)
-                val azimuth = Math.toDegrees(orientation[0].toDouble()).toFloat()
-                compass.setDirection(bearing, azimuth)
+                val magneticAzimuth = Math.toDegrees(orientation[0].toDouble()).toFloat()
+                val trueAzimuth = (magneticAzimuth + declination + 360f) % 360f
+                compass.setDirection(bearing, trueAzimuth)
             }
             override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
                 if (accuracy == SensorManager.SENSOR_STATUS_UNRELIABLE) {
