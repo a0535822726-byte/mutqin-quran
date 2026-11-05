@@ -19,4 +19,18 @@ internal object QuranPageValidation {
         require(text.isNotBlank()) { "Quran service returned empty ayah text" }
         return text
     }
+
+    fun ayahResponse(
+        requestedSurah: Int,
+        requestedAyah: Int,
+        returnedSurah: Int,
+        returnedAyah: Int,
+        text: String
+    ): String {
+        QuranReference.requireValid(requestedSurah, requestedAyah)
+        require(returnedSurah == requestedSurah && returnedAyah == requestedAyah) {
+            "Quran service returned a different ayah"
+        }
+        return ayahText(requestedSurah, requestedAyah, text)
+    }
 }
