@@ -55,7 +55,7 @@ object QuranPageSource {
 
     fun load(page: Int): Result<String> = runCatching {
         require(page in 1..604) { "Page must be between 1 and 604" }
-        val connection = (URL("https://api.alquran.cloud/v1/page/$page/quran-uthmani").openConnection() as HttpURLConnection)
+        val connection = (URL(QuranPageRequest.pageUrl(page)).openConnection() as HttpURLConnection)
         connection.requestMethod = "GET"
         connection.connectTimeout = 12000
         connection.readTimeout = 15000
