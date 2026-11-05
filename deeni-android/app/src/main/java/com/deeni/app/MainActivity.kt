@@ -167,7 +167,7 @@ class MainActivity : Activity() {
             showHome()
         })
         root.addView(space(10))
-        card("التسميع المباشر", "اقرأ وتابع الكلمات أثناء التسميع", "🎙") { showQuran(true) }
+        card("التفريغ الصوتي التجريبي", "اعرض الكلمات التي يلتقطها الهاتف دون ادعاء تصحيح قرآني", "🎙") { showQuran(true) }
         card("البحث في القرآن", "ابحث عن كلمة أو عبارة في الآيات", "⌕") { showQuranSearch() }
         card("الآيات المحفوظة", "اجمع الآيات التي تريد الرجوع إليها", "☆") { showSavedAyahs() }
         card("التفسير الميسر", "اقرأ تفسير الآية مع نصها القرآني", "📖") { showTafsir() }
@@ -319,11 +319,11 @@ class MainActivity : Activity() {
         root.addView(space(14))
         root.addView(label("التسميع الصوتي", 20f, cream, true))
         root.addView(label("التعرف الصوتي العام قد يخطئ في ألفاظ القرآن؛ هذه الأداة ليست محركًا متخصصًا ولا تصحح التجويد.", 13f, muted))
-        val status = label("التسميع التجريبي متاح لسورة الفاتحة فقط", 14f, gold, true)
+        val status = label("تفريغ صوتي عام — ليس تصحيحًا للقرآن", 14f, gold, true)
         root.addView(status)
         val live = TextView(this).apply { text = "النص الملتقط يظهر هنا"; textSize = 17f; setTextColor(cream); background = shape(panel, 16f); setPadding(14, 14, 14, 14) }
         root.addView(live)
-        root.addView(button("ابدأ تسميع الفاتحة", true) { beginRecognition(status, live, mutableListOf()) })
+        root.addView(button("ابدأ التفريغ الصوتي", true) { beginRecognition(status, live, mutableListOf()) })
         root.addView(button("إيقاف التسميع", false) { stopRecognition(); status.text = "تم إيقاف التسميع" })
         root.addView(button("العودة للرئيسية", false) { stopRecognition(); showHome() })
         loadMushafPage(mushafPage)
