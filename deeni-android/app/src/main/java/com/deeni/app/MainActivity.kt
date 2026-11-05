@@ -96,6 +96,16 @@ class MainActivity : Activity() {
         showHome()
     }
 
+    @Deprecated("Use the platform back dispatcher on newer Android versions")
+    override fun onBackPressed() {
+        if (currentPage != "home") {
+            stopRecognition()
+            showHome()
+        } else {
+            super.onBackPressed()
+        }
+    }
+
     private fun shape(color: Int, radius: Float = 24f): GradientDrawable =
         GradientDrawable().apply { setColor(color); cornerRadius = radius }
 
@@ -118,6 +128,7 @@ class MainActivity : Activity() {
         }
 
     private fun base(title: String, subtitle: String) {
+        stopQiblaSensor()
         root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(20, 20, 20, 22)
