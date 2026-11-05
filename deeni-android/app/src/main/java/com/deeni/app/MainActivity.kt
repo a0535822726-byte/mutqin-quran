@@ -688,11 +688,11 @@ class MainActivity : Activity() {
                       Array.from(node.attributes||[]).forEach(function(attr){
                         const name=attr.name.toLowerCase();
                         const value=attr.value.trim();
-                        if(name.startsWith('on') || ((name==='href' || name==='xlink:href') && value && !value.startsWith('#')) || (name==='style' && /url\s*\\(|expression\s*\\(/i.test(value))) node.removeAttribute(attr.name);
+                        if(name.startsWith('on') || ((name==='href' || name==='xlink:href') && value && !value.startsWith('#')) || (name==='style' && /url\s*\(|expression\s*\(/i.test(value))) node.removeAttribute(attr.name);
                       });
                     });
                     svg.querySelectorAll('style').forEach(function(node){
-                      node.textContent=node.textContent.replace(/@import[^;]*;?/gi,'').replace(/url\s*\\([^)]*\\)/gi,'');
+                      node.textContent=node.textContent.replace(/@import[^;]*;?/gi,'').replace(/url\s*\([^)]*\)/gi,'');
                     });
                     host.replaceChildren(document.importNode(svg,true));
                     const mounted=host.querySelector('svg');
