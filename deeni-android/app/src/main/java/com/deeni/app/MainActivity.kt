@@ -261,27 +261,18 @@ class MainActivity : Activity() {
                     if(svg.querySelector('parsererror')) throw new Error('SVG parse error');
                     svg.removeAttribute('width');
                     svg.removeAttribute('height');
-                    const content=svg.querySelector('#content')||svg;
-                    const box=content.getBBox();
-                    if(box.width>0&&box.height>0){
-                      const pad=5;
-                      svg.setAttribute('viewBox',(box.x-pad)+' '+(box.y-pad)+' '+(box.width+pad*2)+' '+(box.height+pad*2));
-                    }
-                    svg.querySelectorAll('.ayahPolygon').forEach(function(path){
-                      path.style.pointerEvents='all';
-                      path.addEventListener('click',function(){
-                        svg.querySelectorAll('.ayahPolygon').forEach(function(p){p.setAttribute('fill-opacity','0');});
-                        path.setAttribute('fill','#d6b76f');
-                        path.setAttribute('fill-opacity','0.38');
-                        const s=Number(path.getAttribute('surah'));
-                        const a=Number(path.getAttribute('ayah'));
-                        if(s>0&&a>0&&window.DeeniMushaf) window.DeeniMushaf.onAyahSelected(s,a);
-                      });
-                    });
                     host.replaceChildren(document.importNode(svg,true));
                     const mounted=host.querySelector('svg');
                     mounted.style.width='100%';
                     mounted.style.height='auto';
+                    try{
+                      const content=mounted.querySelector('#content')||mounted;
+                      const box=content.getBBox();
+                      if(box.width>0&&box.height>0){
+                        const pad=5;
+                        mounted.setAttribute('viewBox',(box.x-pad)+' '+(box.y-pad)+' '+(box.width+pad*2)+' '+(box.height+pad*2));
+                      }
+                    }catch(ignore){}
                     mounted.querySelectorAll('.ayahPolygon').forEach(function(path){
                       path.style.pointerEvents='all';
                       path.addEventListener('click',function(){
