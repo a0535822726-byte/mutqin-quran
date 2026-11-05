@@ -155,7 +155,7 @@ class MainActivity : Activity() {
         }
 
     private fun base(title: String, subtitle: String) {
-        // A screen change ends any active capture/playback and releases the old Mushaf view.
+        // Stop screen-specific resources before building the next screen.
         stopRecognition()
         stopQuranAudio()
         stopQiblaSensor()
@@ -168,75 +168,90 @@ class MainActivity : Activity() {
             } catch (_: Exception) {}
         }
         mushafWebView = null
-        root = LinearLayout(this).apply {
+
+        val shell = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(20, 20, 20, 22)
             layoutDirection = View.LAYOUT_DIRECTION_RTL
             setBackgroundColor(bg)
         }
-        val scroll = ScrollView(this).apply { isFillViewport = true; addView(root) }
-        root.addView(label("دِينِي  •  رفيق رحلتك", 14f, gold, true))
-        root.addView(label(title, 29f, cream, true))
-        root.addView(label(subtitle, 14f, muted))
-        root.addView(space(12))
-        setContentView(scroll)
+        root = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            layoutDirection = View.LAYOUT_DIRECTION_RTL
+            setPadding(18, 18, 18, 20)
+            setBackgroundColor(bg)
+        }
+        val scroll = ScrollView(this).apply {
+            isFillViewport = true
+            clipToPadding = false
+            addView(root)
+        }
+        shell.addView(scroll, LinearLayout.LayoutParams(-1, 0, 1f))
+
+        val top = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(20, 13, 20, 8)
+            setBackgroundColor(bg)
+        }
+        top.addView(label("دِينِي", 17f, gold, true))
+        top.addView(label(title, 25f, cream, true))
+        top.addView(label(subtitle, 12f, muted))
+        shell.addView(top)
+
+        val nav = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER
+            layoutDirection = View.LAYOUT_DIRECTION_RTL
+            setPadding(8, 9, 8, 9)
+            background = shape(panel, 20f)
+        }
+        fun navItem(text: String, active: Boolean, action: () -> Unit) {
+            val item = TextView(this).apply {
+                this.text = text
+                textSize = 11f
+                gravity = Gravity.CENTER
+                setTextColor(if (active) gold else muted)
+                setPadding(3, 9, 3, 9)
+                typeface = Typeface.create("sans-serif", if (active) Typeface.BOLD else Typeface.NORMAL)
+                setOnClickListener { action() }
+            }
+            nav.addView(item, LinearLayout.LayoutParams(0, -2, 1f))
+        }
+        navItem("⌂\nالرئيسية", currentPage == "home") { showHome() }
+        navItem("▤\nالمصحف", currentPage == "quran") { showQuran() }
+        navItem("◉\nالحفظ", currentPage == "revision") { showRevision() }
+        navItem("◷\nالتقدم", currentPage == "progress") { showProgress() }
+        navItem("•••\nالمزيد", currentPage == "more") { showMore() }
+        val navWrap = LinearLayout(this).apply {
+            setPadding(12, 5, 12, 10)
+            setBackgroundColor(bg)
+            addView(nav)
+        }
+        shell.addView(navWrap)
+        setContentView(shell)
     }
 
-    private fun space(h: Int): View = View(this).apply { layoutParams = LinearLayout.LayoutParams(1, h) }
-
-    private fun card(title: String, desc: String, icon: String, action: () -> Unit) {
-        val box = LinearLayout(this).apply {
+    private fun homeTile(title: String, subtitle: String, icon: String, action: () -> Unit) {
+        val tile = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            background = shape(panel, 22f)
-            setPadding(18, 13, 18, 13)
-            addView(label(icon, 21f, gold, true))
-            addView(label(title, 19f, cream, true))
-            addView(label(desc, 13f, muted))
+            gravity = Gravity.CENTER
+            background = shape(panel, 20f)
+            setPadding(10, 15, 10, 15)
+            addView(label(icon, 25f, gold, true).apply { gravity = Gravity.CENTER })
+            addView(label(title, 15f, cream, true).apply { gravity = Gravity.CENTER })
+            addView(label(subtitle, 11f, muted).apply { gravity = Gravity.CENTER })
             setOnClickListener { action() }
         }
-        val p = LinearLayout.LayoutParams(-1, -2); p.bottomMargin = 12
-        root.addView(box, p)
+        tile.minimumHeight = 112
+        val params = LinearLayout.LayoutParams(0, -2, 1f)
+        params.setMargins(5, 5, 5, 5)
+        homeTileRow?.addView(tile, params)
     }
 
-    private fun showHome() {
-        currentPage = "home"
-        base("السلام عليك", "مساحة هادئة للقرآن والتعلم والذكر")
-        val hero = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL; background = shape(panel2, 26f); setPadding(20, 18, 20, 18)
-            addView(label("وَرَتِّلِ الْقُرْآنَ تَرْتِيلًا", 25f, gold, true))
-            addView(label("ابدأ من حيث وصلت، وتقدّم بخطوات ثابتة.", 14f, cream))
-            addView(button("افتح المصحف", true) { showQuran() })
-        }
-        root.addView(hero)
-        root.addView(space(18))
-        root.addView(label("اكتشف ديني", 20f, cream, true))
-        root.addView(button(if (lightTheme) "التبديل إلى الوضع الداكن" else "التبديل إلى الوضع الفاتح", false) {
-            lightTheme = !lightTheme
-            getSharedPreferences("deeni", MODE_PRIVATE).edit().putBoolean("light_theme", lightTheme).apply()
-            applyTheme()
-            showHome()
-        })
-        root.addView(space(10))
-        card("التفريغ الصوتي التجريبي", "اعرض الكلمات التي يلتقطها الهاتف دون ادعاء تصحيح قرآني", "🎙") { showQuran(true) }
-        card("البحث في القرآن", "ابحث عن كلمة أو عبارة في الآيات", "⌕") { showQuranSearch() }
-        card("الآيات المحفوظة", "اجمع الآيات التي تريد الرجوع إليها", "☆") { showSavedAyahs() }
-        card("التفسير الميسر", "اقرأ تفسير الآية مع نصها القرآني", "📖") { showTafsir() }
-        card("مكتبة القراء", "اختر قارئك المفضل", "♫") { chooseReader() }
-        card("الأذكار والتسبيح", "ذكر يومي وعداد محفوظ", "✧") { showTasbeeh() }
-        card("الحفظ والمراجعة", "خطة يومية وسجل إنجاز محفوظ", "۞") { showRevision() }
-        card("السيرة والحديث", "محطات السيرة وأحاديث مع مراجعها", "☾") { showIslamicLibrary() }
-        card("الأدعية القرآنية", "أدعية من القرآن مع مواضعها وإمكانية نسخها", "🤲") { showDuas() }
-        card("ملاحظاتي", "احفظ فوائدك وملاحظاتك محليًا", "✎") { showNotes() }
-        card("الأذكار", "أذكار مختارة مع عداد لكل ذكر", "۞") { showAdhkar() }
-        card("المسابقات الإسلامية", "اختبر معلوماتك في القرآن والسيرة والحديث", "🏆") { showQuiz() }
-        card("أسماء الله الحسنى", "معانٍ مختصرة لأسماء الله الحسنى", "✧") { showNames() }
-        card("مواقيت الصلاة", "اعرض مواقيت الصلاة حسب مدينتك", "◷") { showPrayerTimes() }
-        card("اتجاه القبلة", "بوصلة تتبع اتجاه القبلة بحساس الهاتف", "🧭") { showQibla() }
-        card("تعلم التجويد", "دروس تأسيسية وأمثلة للتدرب", "۞") { showTajweed() }
-        card("قصص الأنبياء", "مختارات من القصص الواردة في القرآن", "☾") { showProphetStories() }
-        card("قصص الصحابة", "لمحات موجزة عن رجال ونساء من الصحابة", "☼") { showCompanionStories() }
-        card("مبادئ الفقه", "تعريفات وأحكام عامة للتعلم", "⚖") { showFiqhBasics() }
-        root.addView(label("المصحف يعرض نص الصفحات عند الاتصال بالإنترنت. بعض الأدوات المتقدمة مثل التسميع المتخصص ومزامنة القراء ما زالت تحتاج محركًا واختبارات إضافية.", 12f, muted))
+    private var homeTileRow: LinearLayout? = null
+
+    private fun homeSection(title: String) {
+        root.addView(space(12))
+        root.addView(label(title, 18f, cream, true))
     }
 
     private var mushafPage = 1
