@@ -125,54 +125,77 @@ class MainActivity : Activity() {
         root.addView(label("نسخة تطوير: المصحف المعروض حاليًا سورة الفاتحة كنموذج أولي، وبقية السور ومصادر الصوت قيد الإضافة.", 12f, muted))
     }
 
+    private var mushafPage = 1
+    private var pageTextView: TextView? = null
+    private var pageStatus: TextView? = null
+
     private fun showQuran(startMic: Boolean = false) {
         currentPage = "quran"
-        base("المصحف الشريف", "سورة الفاتحة • نموذج القراءة والمتابعة")
-        val readerBox = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL; background = shape(panel, 20f); setPadding(16, 12, 16, 12)
-            addView(label("القارئ المحدد", 13f, muted))
-            addView(button("♫  $selectedReader  ·  تغيير القارئ", false) { chooseReader() })
-            addView(label("تشغيل تلاوة القارئ ومزامنة الآيات ستضاف بعد ربط مصدر صوت موثوق وتوقيت الآيات؛ هذا الزر لا يدّعي تشغيل صوت غير موجود.", 12f, muted))
+        mushafPage = getSharedPreferences("deeni", MODE_PRIVATE).getInt("mushaf_page", 1).coerceIn(1, 604)
+        base("المصحف الشريف", "تصفح صفحات القرآن الكريم • النص العثماني")
+        root.addView(label("القارئ المحدد: $selectedReader", 14f, gold, true))
+        root.addView(button("تغيير القارئ", false) { chooseReader() })
+        root.addView(label("مصدر النص: واجهة القرآن الكريم الرقمية. يلزم اتصال بالإنترنت لتحميل الصفحات. هذا عرض نصي للصفحة وليس صورة طبق الأصل من طبعة مصحف المدينة.", 12f, muted))
+        val controls = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER; layoutDirection = View.LAYOUT_DIRECTION_LTR }
+        controls.addView(button("السابق", false) { loadMushafPage(mushafPage - 1) }, LinearLayout.LayoutParams(0, -2, 1f))
+        controls.addView(button("رقم الصفحة", true) {
+            val input = EditText(this@MainActivity).apply { inputType = android.text.InputType.TYPE_CLASS_NUMBER; setText(mushafPage.toString()); gravity = Gravity.CENTER }
+            android.app.AlertDialog.Builder(this@MainActivity).setTitle("اذهب إلى صفحة (1–604)").setView(input)
+                .setPositiveButton("فتح") { _, _ -> loadMushafPage(input.text.toString().toIntOrNull() ?: mushafPage) }
+                .setNegativeButton("إلغاء", null).show()
+        }, LinearLayout.LayoutParams(0, -2, 1f))
+        controls.addView(button("التالي", false) { loadMushafPage(mushafPage + 1) }, LinearLayout.LayoutParams(0, -2, 1f))
+        root.addView(controls)
+        pageStatus = label("جارٍ تحميل الصفحة…", 14f, gold, true)
+        root.addView(pageStatus!!)
+        pageTextView = TextView(this).apply {
+            text = "يتم تحميل نص الصفحة…"; textSize = 23f; setTextColor(Color.rgb(53, 49, 40))
+            gravity = Gravity.CENTER; textDirection = View.TEXT_DIRECTION_RTL
+            typeface = Typeface.create("serif", Typeface.NORMAL)
+            setLineSpacing(12f, 1.25f)
+            setPadding(22, 28, 22, 28)
+            background = shape(Color.rgb(248, 243, 228), 18f)
         }
-        root.addView(readerBox)
-        root.addView(space(14))
-        val mushaf = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            background = shape(Color.rgb(248, 243, 228), 24f)
-            setPadding(18, 18, 18, 18)
-        }
-        mushaf.addView(TextView(this).apply {
-            text = "سُورَةُ الْفَاتِحَةِ"; textSize = 20f; setTextColor(Color.rgb(104, 79, 39))
-            gravity = Gravity.CENTER; typeface = Typeface.DEFAULT_BOLD; setPadding(0, 4, 0, 16)
-        })
-        val ayahViews = mutableListOf<TextView>()
-        fatiha.forEachIndexed { i, ayah ->
-            val tv = TextView(this).apply {
-                text = "﴿${i + 1}﴾  $ayah"
-                textSize = 22f; setTextColor(Color.rgb(53, 49, 40)); gravity = Gravity.CENTER
-                typeface = Typeface.create("serif", Typeface.NORMAL)
-                setPadding(5, 11, 5, 11); textDirection = View.TEXT_DIRECTION_RTL
-            }
-            ayahViews.add(tv); mushaf.addView(tv)
-        }
-        root.addView(mushaf)
-        root.addView(space(14))
-        root.addView(label("التسميع الذكي", 21f, cream, true))
-        root.addView(label("اسمح للميكروفون، ثم اقرأ الفاتحة. سيعرض التعرف الصوتي النص الذي التقطه ويقارن الكلمات بالنص المعروض. قد يخطئ التعرف الصوتي في التشكيل أو النطق؛ راجع النتيجة ولا تعتمد عليه وحده.", 13f, muted))
-        val status = label("جاهز للتسميع", 15f, gold, true)
-        root.addView(status)
-        val live = TextView(this).apply {
-            text = "سيظهر النص الملتقط هنا أثناء القراءة…"; textSize = 18f; setTextColor(cream)
-            background = shape(panel, 18f); setPadding(15, 15, 15, 15); gravity = Gravity.RIGHT
-        }
-        root.addView(live)
+        root.addView(pageTextView!!)
         root.addView(space(10))
-        root.addView(button("🎙  ابدأ التسميع", true) { beginRecognition(status, live, ayahViews) })
-        root.addView(space(8))
+        root.addView(button("حفظ هذه الصفحة كموضع متابعة", true) {
+            getSharedPreferences("deeni", MODE_PRIVATE).edit().putInt("mushaf_page", mushafPage).apply()
+            Toast.makeText(this, "تم حفظ الصفحة $mushafPage", Toast.LENGTH_SHORT).show()
+        })
+        root.addView(space(14))
+        root.addView(label("التسميع الصوتي", 20f, cream, true))
+        root.addView(label("التعرف الصوتي العام قد يخطئ في ألفاظ القرآن؛ هذه الأداة ليست محركًا متخصصًا ولا تصحح التجويد. لا تعرض نتيجة على أنها حكم قطعي.", 13f, muted))
+        val status = label("التسميع متاح لسورة الفاتحة فقط في هذه المرحلة", 14f, gold, true)
+        root.addView(status)
+        val live = TextView(this).apply { text = "النص الملتقط يظهر هنا"; textSize = 17f; setTextColor(cream); background = shape(panel, 16f); setPadding(14, 14, 14, 14) }
+        root.addView(live)
+        root.addView(button("ابدأ تسميع الفاتحة", true) { beginRecognition(status, live, mutableListOf()) })
         root.addView(button("إيقاف التسميع", false) { stopRecognition(); status.text = "تم إيقاف التسميع" })
-        root.addView(label("ملاحظة: المقارنة الحالية نموذج أولي للفـاتحة باستخدام خدمة التعرف على الكلام في الجهاز، وليست محرك ترتيل متخصصًا ولا تصحيحًا للتجويد أو المخارج.", 12f, muted))
         root.addView(button("العودة للرئيسية", false) { stopRecognition(); showHome() })
-        if (startMic) root.post { beginRecognition(status, live, ayahViews) }
+        loadMushafPage(mushafPage)
+        if (startMic) root.post { beginRecognition(status, live, mutableListOf()) }
+    }
+
+    private fun loadMushafPage(requested: Int) {
+        val page = requested.coerceIn(1, 604)
+        mushafPage = page
+        pageStatus?.text = "جارٍ تحميل الصفحة $page من 604…"
+        pageTextView?.text = "يتم تحميل النص القرآني…"
+        Thread {
+            val result = QuranPageSource.load(page)
+            runOnUiThread {
+                if (currentPage != "quran" || mushafPage != page) return@runOnUiThread
+                if (result.isSuccess) {
+                    pageTextView?.text = result.getOrThrow()
+                    pageStatus?.text = "صفحة $page • من 604"
+                    getSharedPreferences("deeni", MODE_PRIVATE).edit().putInt("mushaf_page", page).apply()
+                } else {
+                    pageStatus?.text = "تعذر تحميل الصفحة"
+                    pageTextView?.text = "لم نتمكن من جلب النص. تحقق من اتصال الإنترنت ثم اضغط إعادة المحاولة."
+                    root.addView(button("إعادة تحميل الصفحة", false) { loadMushafPage(page) })
+                }
+            }
+        }.start()
     }
 
     private fun normalize(s: String): String =
