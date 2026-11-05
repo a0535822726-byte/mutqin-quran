@@ -1451,8 +1451,11 @@ class MainActivity : Activity() {
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == 77 && grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+        if (requestCode != 77) return
+        if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
             Toast.makeText(this, "تم السماح بالميكروفون. اضغط ابدأ التسميع.", Toast.LENGTH_LONG).show()
+        } else {
+            Toast.makeText(this, "لم يُسمح بالميكروفون. يمكنك قراءة المصحف دون التسميع، وتفعيل الإذن لاحقًا من إعدادات التطبيق.", Toast.LENGTH_LONG).show()
         }
     }
 
