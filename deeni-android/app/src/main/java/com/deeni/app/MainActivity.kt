@@ -72,6 +72,8 @@ class MainActivity : Activity() {
     private var playbackSpeed = 1.0f
     private var playbackSurah = 1
     private var playbackStatus: TextView? = null
+    private var recitationStatusView: TextView? = null
+    private var recitationTextView: TextView? = null
     private var pendingHighlight: Pair<Int, Int>? = null
     private var selectedAyah: Pair<Int, Int>? = null
     private var selectedAyahText: String? = null
@@ -454,24 +456,45 @@ class MainActivity : Activity() {
     private fun showQuran(startMic: Boolean = false) {
         currentPage = "quran"
         mushafPage = getSharedPreferences("deeni", MODE_PRIVATE).getInt("mushaf_page", 1).coerceIn(1, 604)
-        base("المصحف الشريف", "مصحف المدينة النبوية • رواية حفص • صفحات مطبوعة")
-        root.addView(label("القارئ المحدد: $selectedReader", 14f, gold, true))
-        root.addView(label("صفحات مصحف المدينة النبوية الصادر عن مجمع الملك فهد لطباعة المصحف الشريف. يلزم الاتصال بالإنترنت لعرض الصفحة.", 12f, muted))
-        val controls = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER; layoutDirection = View.LAYOUT_DIRECTION_LTR }
-        controls.addView(button("السابق", false) { loadMushafPage(mushafPage - 1) }, LinearLayout.LayoutParams(0, -2, 1f))
-        controls.addView(button("رقم الصفحة", true) {
-            val input = EditText(this@MainActivity).apply { inputType = android.text.InputType.TYPE_CLASS_NUMBER; setText(mushafPage.toString()); gravity = Gravity.CENTER }
-            android.app.AlertDialog.Builder(this@MainActivity).setTitle("اذهب إلى صفحة (1–604)").setView(input)
+        base("القرآن الكريم", "اقرأ • استمع • سمّع • راجع")
+
+        val readerBar = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            background = shape(panel, 18f)
+            setPadding(14, 9, 14, 9)
+        }
+        val readerInfo = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        readerInfo.addView(label("القارئ الحالي", 11f, muted))
+        readerInfo.addView(label(selectedReader, 15f, cream, true))
+        readerBar.addView(readerInfo, LinearLayout.LayoutParams(0, -2, 1f))
+        readerBar.addView(button("تغيير القارئ", false) { chooseReader() })
+        root.addView(readerBar)
+        root.addView(space(9))
+
+        val pageBar = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER
+            layoutDirection = View.LAYOUT_DIRECTION_LTR
+        }
+        pageBar.addView(button("‹", false) { loadMushafPage(mushafPage - 1) }, LinearLayout.LayoutParams(52, -2))
+        pageBar.addView(button("الصفحة $mushafPage / 604", true) {
+            val input = EditText(this@MainActivity).apply {
+                inputType = android.text.InputType.TYPE_CLASS_NUMBER
+                setText(mushafPage.toString())
+                gravity = Gravity.CENTER
+            }
+            android.app.AlertDialog.Builder(this@MainActivity)
+                .setTitle("الانتقال إلى صفحة")
+                .setView(input)
                 .setPositiveButton("فتح") { _, _ -> loadMushafPage(input.text.toString().toIntOrNull() ?: mushafPage) }
                 .setNegativeButton("إلغاء", null).show()
         }, LinearLayout.LayoutParams(0, -2, 1f))
-        controls.addView(button("التالي", false) { loadMushafPage(mushafPage + 1) }, LinearLayout.LayoutParams(0, -2, 1f))
-        root.addView(controls)
-        pageStatus = label("جارٍ تحميل صفحة المصحف…", 14f, gold, true)
+        pageBar.addView(button("›", false) { loadMushafPage(mushafPage + 1) }, LinearLayout.LayoutParams(52, -2))
+        root.addView(pageBar)
+
+        pageStatus = label("جارٍ تحميل صفحة المصحف…", 12f, muted)
         root.addView(pageStatus!!)
-        root.addView(button("إعادة تحميل صفحة المصحف", false) {
-            loadMushafPage(mushafPage)
-        })
         mushafWebView = WebView(this).apply {
             setBackgroundColor(Color.rgb(248, 243, 228))
             settings.javaScriptEnabled = true
@@ -484,90 +507,112 @@ class MainActivity : Activity() {
             addJavascriptInterface(MushafBridge(), "DeeniMushaf")
             webViewClient = object : WebViewClient() {
                 override fun shouldOverrideUrlLoading(view: WebView?, url: String?): Boolean = true
-                override fun onPageFinished(view: WebView?, url: String?) {
-                    // JavaScript bridge reports success only after the SVG is mounted.
-                }
             }
         }
-        root.addView(mushafWebView!!, LinearLayout.LayoutParams(-1, 560))
-        ayahStatus = label("اضغط على موضع آية في الصفحة لعرض نصها.", 19f, cream, true)
+        val mushafFrame = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            background = shape(Color.rgb(248, 243, 228), 12f)
+            setPadding(4, 4, 4, 4)
+            addView(mushafWebView!!, LinearLayout.LayoutParams(-1, 590))
+        }
+        root.addView(mushafFrame)
+        root.addView(label("اضغط على الآية لتحديدها وبدء التسميع عليها.", 12f, muted))
+        ayahStatus = label("اختر آية من المصحف", 18f, cream, true)
         ayahStatus!!.background = shape(panel, 16f)
         ayahStatus!!.setPadding(14, 14, 14, 14)
         root.addView(ayahStatus!!)
-        root.addView(button("حفظ الآية المحددة في قائمتي", false) {
-            val selected = selectedAyah
-            if (selected == null) {
-                Toast.makeText(this, "اضغط على آية في صفحة المصحف أولًا.", Toast.LENGTH_SHORT).show()
-            } else {
-                val prefs = getSharedPreferences("deeni", MODE_PRIVATE)
-                val saved = prefs.getStringSet("saved_ayahs", emptySet())?.toMutableSet() ?: mutableSetOf()
-                saved.add("${selected.first}:${selected.second}")
-                prefs.edit().putStringSet("saved_ayahs", saved).apply()
-                Toast.makeText(this, "تم حفظ الآية ${selected.first}:${selected.second}", Toast.LENGTH_SHORT).show()
-            }
-        })
-        root.addView(space(10))
-        root.addView(button("حفظ هذه الصفحة كموضع متابعة", true) {
-            getSharedPreferences("deeni", MODE_PRIVATE).edit().putInt("mushaf_page", mushafPage).apply()
-            Toast.makeText(this, "تم حفظ الصفحة $mushafPage", Toast.LENGTH_SHORT).show()
-        })
-        root.addView(button("إضافة الصفحة إلى العلامات المرجعية", false) {
-            val prefs = getSharedPreferences("deeni", MODE_PRIVATE)
-            val saved = prefs.getStringSet("mushaf_bookmarks", emptySet())?.toMutableSet() ?: mutableSetOf()
-            saved.add(mushafPage.toString())
-            prefs.edit().putStringSet("mushaf_bookmarks", saved).apply()
-            Toast.makeText(this, "أضيفت الصفحة $mushafPage إلى العلامات", Toast.LENGTH_SHORT).show()
-        })
-        root.addView(button("عرض العلامات المرجعية", false) { showMushafBookmarks() })
-        root.addView(button("اختيار سورة وتشغيل تلاوة القارئ", true) { showSurahPicker() })
-        playbackStatus = label("التلاوة متوقفة", 13f, muted)
-        root.addView(playbackStatus!!)
-        root.addView(button("إيقاف مؤقت / متابعة", false) { toggleQuranPlayback() })
-        root.addView(button("إيقاف التلاوة", false) { stopQuranAudio() })
-        root.addView(button("تكرار الآية الحالية: تشغيل / إيقاف", false) {
-            val timing = timingRows.firstOrNull { it.ayah == currentTimedAyah }
-            if (timing == null) {
-                Toast.makeText(this, "ابدأ تلاوة تتوفر لها بيانات توقيت الآيات وانتظر ظهور الآية الحالية.", Toast.LENGTH_LONG).show()
-            } else {
-                repeatTiming = if (repeatTiming == null) timing else null
-                playbackStatus?.text = if (repeatTiming != null) "تكرار الآية ${timing.ayah} مفعّل" else "تم إيقاف تكرار الآية"
-            }
-        })
-        root.addView(button("سرعة التلاوة: 0.8× / 1× / 1.2×", false) {
-            playbackSpeed = when (playbackSpeed) { 1.0f -> 0.8f; 0.8f -> 1.2f; else -> 1.0f }
-            try {
-                quranPlayer?.let { player -> player.playbackParams = player.playbackParams.setSpeed(playbackSpeed) }
-                playbackStatus?.text = "سرعة التلاوة ${playbackSpeed}×"
-            } catch (_: Exception) {
-                Toast.makeText(this, "تعذر تغيير السرعة في هذا الجهاز.", Toast.LENGTH_SHORT).show()
-            }
-        })
-        root.addView(space(14))
-        root.addView(label("التفريغ الصوتي العام", 20f, cream, true))
-        root.addView(label("التعرف الصوتي العام قد يخطئ في ألفاظ القرآن؛ هذه الأداة ليست محركًا متخصصًا ولا تصحح التجويد.", 13f, muted))
-        root.addView(label("خصوصية الصوت: لا يحفظ تطبيق ديني تسجيلًا صوتيًا. قد تعالج خدمة التعرف الصوتي في الهاتف الكلام وفق إعداداتها وسياسة مزودها؛ أوقف الميكروفون بعد الانتهاء.", 12f, muted))
-        val status = label("التعرف الصوتي غير متخصص في القرآن", 14f, gold, true)
-        root.addView(status)
-        val live = TextView(this).apply { text = "النص الملتقط يظهر هنا"; textSize = 17f; setTextColor(cream); background = shape(panel, 16f); setPadding(14, 14, 14, 14) }
-        root.addView(live)
-        val recitationControls = LinearLayout(this).apply {
+
+        root.addView(space(8))
+        val primaryActions = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER
             layoutDirection = View.LAYOUT_DIRECTION_LTR
         }
-        recitationControls.addView(
-            button("🎙 ابدأ التفريغ", true) { beginRecognition(status, live) },
-            LinearLayout.LayoutParams(0, -2, 1f)
-        )
-        recitationControls.addView(
-            button("اختيار القارئ", false) { chooseReader() },
-            LinearLayout.LayoutParams(0, -2, 1f)
-        )
-        root.addView(recitationControls)
-        root.addView(button("إيقاف الميكروفون", false) { stopRecognition(); status.text = "تم إيقاف الميكروفون" })
-        root.addView(button("العودة للرئيسية", false) { stopRecognition(); showHome() })
+        primaryActions.addView(button("🎙  ابدأ التسميع", true) {
+            if (selectedAyah == null) {
+                Toast.makeText(this, "حدد آية من المصحف أولًا.", Toast.LENGTH_SHORT).show()
+            } else {
+                root.post { beginRecognition(recitationStatusView!!, recitationTextView!!) }
+            }
+        }, LinearLayout.LayoutParams(0, -2, 1.2f))
+        primaryActions.addView(button("♫  استمع", false) { showSurahPicker() }, LinearLayout.LayoutParams(0, -2, 0.8f))
+        root.addView(primaryActions)
+
+        root.addView(space(6))
+        val utilityActions = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER
+        }
+        utilityActions.addView(button("حفظ الآية", false) {
+            val selected = selectedAyah
+            if (selected == null) {
+                Toast.makeText(this, "حدد آية أولًا.", Toast.LENGTH_SHORT).show()
+            } else {
+                val prefs = getSharedPreferences("deeni", MODE_PRIVATE)
+                val saved = prefs.getStringSet("saved_ayahs", emptySet())?.toMutableSet() ?: mutableSetOf()
+                saved.add("\${selected.first}:\${selected.second}")
+                prefs.edit().putStringSet("saved_ayahs", saved).apply()
+                Toast.makeText(this, "تم حفظ الآية.", Toast.LENGTH_SHORT).show()
+            }
+        }, LinearLayout.LayoutParams(0, -2, 1f))
+        utilityActions.addView(button("علامة مرجعية", false) {
+            val prefs = getSharedPreferences("deeni", MODE_PRIVATE)
+            val saved = prefs.getStringSet("mushaf_bookmarks", emptySet())?.toMutableSet() ?: mutableSetOf()
+            saved.add(mushafPage.toString())
+            prefs.edit().putStringSet("mushaf_bookmarks", saved).apply()
+            Toast.makeText(this, "تم حفظ موضع الصفحة.", Toast.LENGTH_SHORT).show()
+        }, LinearLayout.LayoutParams(0, -2, 1f))
+        utilityActions.addView(button("التفسير", false) { showTafsir() }, LinearLayout.LayoutParams(0, -2, 1f))
+        root.addView(utilityActions)
+
+        root.addView(space(12))
+        root.addView(label("التسميع الصوتي", 19f, cream, true))
+        root.addView(label("يلتقط الهاتف الكلام ويقارنه نصيًا بالآية المحددة. النتيجة استرشادية وليست تصحيحًا متخصصًا للتلاوة أو التجويد.", 12f, muted))
+        recitationStatusView = label("الميكروفون متوقف", 13f, gold, true)
+        root.addView(recitationStatusView!!)
+        recitationTextView = TextView(this).apply {
+            text = "سيظهر هنا النص الذي التقطه الجهاز."
+            textSize = 16f
+            setTextColor(cream)
+            background = shape(panel, 16f)
+            setPadding(14, 14, 14, 14)
+        }
+        root.addView(recitationTextView!!)
+        root.addView(button("تشغيل الميكروفون", true) {
+            beginRecognition(recitationStatusView!!, recitationTextView!!)
+        })
+        root.addView(button("إيقاف الميكروفون", false) {
+            stopRecognition()
+            recitationStatusView?.text = "تم إيقاف الميكروفون"
+        })
+        root.addView(button("حفظ الصفحة كآخر موضع قراءة", false) {
+            getSharedPreferences("deeni", MODE_PRIVATE).edit().putInt("mushaf_page", mushafPage).apply()
+            Toast.makeText(this, "تم حفظ الصفحة $mushafPage", Toast.LENGTH_SHORT).show()
+        })
+        playbackStatus = label("التلاوة متوقفة", 12f, muted)
+        root.addView(playbackStatus!!)
+        root.addView(button("إيقاف مؤقت / متابعة التلاوة", false) { toggleQuranPlayback() })
+        root.addView(button("تكرار الآية الحالية", false) {
+            val timing = timingRows.firstOrNull { it.ayah == currentTimedAyah }
+            if (timing == null) {
+                Toast.makeText(this, "ابدأ تلاوة تتوفر لها بيانات توقيت الآيات أولًا.", Toast.LENGTH_LONG).show()
+            } else {
+                repeatTiming = if (repeatTiming == null) timing else null
+                playbackStatus?.text = if (repeatTiming != null) "تكرار الآية \${timing.ayah} مفعّل" else "تم إيقاف التكرار"
+            }
+        })
+        root.addView(button("تغيير سرعة التلاوة: \${playbackSpeed}×", false) {
+            playbackSpeed = when (playbackSpeed) { 1.0f -> 0.8f; 0.8f -> 1.2f; else -> 1.0f }
+            try {
+                quranPlayer?.let { it.playbackParams = it.playbackParams.setSpeed(playbackSpeed) }
+                playbackStatus?.text = "سرعة التلاوة \${playbackSpeed}×"
+            } catch (_: Exception) {
+                Toast.makeText(this, "تعذر تغيير السرعة على هذا الجهاز.", Toast.LENGTH_SHORT).show()
+            }
+        })
+        root.addView(label("ملاحظة الخصوصية: لا يحفظ التطبيق تسجيلًا صوتيًا. قد تستخدم خدمة التعرف الصوتي في الهاتف مزودًا خارجيًا لمعالجة الكلام.", 11f, muted))
         loadMushafPage(mushafPage)
-        if (startMic) root.post { beginRecognition(status, live) }
+        if (startMic) root.post { beginRecognition(recitationStatusView!!, recitationTextView!!) }
     }
 
     private fun mushafHtml(page: Int): String {
