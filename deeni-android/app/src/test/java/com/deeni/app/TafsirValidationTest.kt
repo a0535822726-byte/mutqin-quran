@@ -11,6 +11,8 @@ class TafsirValidationTest {
             requestedAyah = 1,
             returnedSurah = 1,
             returnedAyah = 1,
+            tafsirSurah = 1,
+            tafsirAyah = 1,
             surahName = "الفاتحة",
             ayahText = "بِسْمِ اللَّهِ",
             tafsirText = "شرح الآية"
@@ -23,21 +25,26 @@ class TafsirValidationTest {
 
     @Test(expected = IllegalArgumentException::class)
     fun rejectsImpossibleRequestedAyah() {
-        TafsirValidation.result(1, 8, 1, 8, "الفاتحة", "نص", "تفسير")
+        TafsirValidation.result(1, 8, 1, 8, 1, 8, "الفاتحة", "نص", "تفسير")
     }
 
     @Test(expected = IllegalArgumentException::class)
     fun rejectsDifferentReturnedSurah() {
-        TafsirValidation.result(2, 1, 3, 1, "آل عمران", "نص", "تفسير")
+        TafsirValidation.result(2, 1, 3, 1, 2, 1, "آل عمران", "نص", "تفسير")
     }
 
     @Test(expected = IllegalArgumentException::class)
     fun rejectsDifferentReturnedAyah() {
-        TafsirValidation.result(2, 1, 2, 2, "البقرة", "نص", "تفسير")
+        TafsirValidation.result(2, 1, 2, 2, 2, 1, "البقرة", "نص", "تفسير")
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun rejectsDifferentTafsirEditionAyah() {
+        TafsirValidation.result(2, 1, 2, 1, 2, 2, "البقرة", "نص", "تفسير")
     }
 
     @Test(expected = IllegalArgumentException::class)
     fun rejectsMissingTafsirText() {
-        TafsirValidation.result(1, 1, 1, 1, "الفاتحة", "نص", " ")
+        TafsirValidation.result(1, 1, 1, 1, 1, 1, "الفاتحة", "نص", " ")
     }
 }
