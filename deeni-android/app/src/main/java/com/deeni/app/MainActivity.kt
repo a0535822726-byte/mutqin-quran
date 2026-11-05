@@ -1042,7 +1042,8 @@ class MainActivity : Activity() {
         currentPage = "qibla"
         base("اتجاه القبلة", "حدد مدينتك ووجّه الهاتف أفقيًا بعيدًا عن المعادن")
         val prefs = getSharedPreferences("deeni", MODE_PRIVATE)
-        val city = prefs.getString("prayer_city", "أبو عريش") ?: "أبو عريش"
+        val storedCity = prefs.getString("prayer_city", null)
+        val city = if (storedCity.isNullOrBlank() || storedCity == "أبو عريش") "Abu Arish" else storedCity
         root.addView(label("المدينة المستخدمة: ${city}", 14f, muted))
         val status = label("جارٍ تحديد اتجاه القبلة…", 15f, gold, true)
         root.addView(status)
