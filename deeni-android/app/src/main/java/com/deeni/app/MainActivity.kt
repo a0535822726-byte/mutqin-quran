@@ -124,6 +124,8 @@ class MainActivity : Activity() {
         card("السيرة والحديث", "محطات السيرة وأحاديث مع مراجعها", "☾") { showIslamicLibrary() }
         card("ملاحظاتي", "احفظ فوائدك وملاحظاتك محليًا", "✎") { showNotes() }
         card("الأذكار", "أذكار مختارة مع عداد لكل ذكر", "۞") { showAdhkar() }
+        card("المسابقات الإسلامية", "اختبر معلوماتك في القرآن والسيرة والحديث", "🏆") { showQuiz() }
+        card("أسماء الله الحسنى", "معانٍ مختصرة لأسماء الله الحسنى", "✧") { showNames() }
         root.addView(label("المصحف يعرض نص الصفحات عند الاتصال بالإنترنت. بعض الأدوات المتقدمة مثل التسميع المتخصص ومزامنة القراء ما زالت تحتاج محركًا واختبارات إضافية.", 12f, muted))
     }
 
@@ -253,13 +255,13 @@ class MainActivity : Activity() {
 
     private fun renderComparison(spoken: String, live: TextView, ayahViews: List<TextView>) {
         if (spoken.isBlank()) return
-        live.text = "ما التقطه الجهاز:\\n$spoken"
+        live.text = "ما التقطه الجهاز:\n$spoken"
         val got = normalize(spoken).split(" ").filter { it.isNotBlank() }
         val expected = expectedWords.map { normalize(it) }
         var matched = 0
         for (word in got) if (matched < expected.size && word == expected[matched]) matched++
         val correctRatio = if (got.isEmpty()) 0 else (matched * 100 / got.size)
-        live.append("\\n\\nتطابق تقريبي: $correctRatio٪")
+        live.append("\n\nتطابق تقريبي: $correctRatio٪")
         ayahViews.forEachIndexed { index, view ->
             val rangeStart = fatiha.take(index).sumOf { normalize(it).split(" ").size }
             val rangeEnd = rangeStart + normalize(fatiha[index]).split(" ").size
@@ -447,6 +449,91 @@ class MainActivity : Activity() {
             showAdhkar()
         })
         root.addView(button("الرئيسية", false) { showHome() })
+    }
+
+    private fun showQuiz() {
+        currentPage = "quiz"
+        val questions = listOf(
+            Triple("ما السورة التي تُفتتح بها المصاحف؟", listOf("الفاتحة", "البقرة", "الإخلاص", "الناس"), 0),
+            Triple("كم عدد أركان الإسلام؟", listOf("أربعة", "خمسة", "ستة", "سبعة"), 1),
+            Triple("في أي شهر يصوم المسلمون؟", listOf("شعبان", "رمضان", "شوال", "محرم"), 1),
+            Triple("ما أطول سورة في القرآن الكريم؟", listOf("آل عمران", "النساء", "البقرة", "المائدة"), 2),
+            Triple("من النبي الذي ابتلعه الحوت؟", listOf("موسى عليه السلام", "يونس عليه السلام", "يوسف عليه السلام", "نوح عليه السلام"), 1),
+            Triple("ما اسم الغار الذي نزل فيه الوحي أول مرة؟", listOf("ثور", "حراء", "أحد", "النور"), 1),
+            Triple("كم عدد الصلوات المفروضة في اليوم والليلة؟", listOf("ثلاث", "أربع", "خمس", "ست"), 2),
+            Triple("ما الكتاب الذي أُنزل على النبي محمد ﷺ؟", listOf("التوراة", "الإنجيل", "الزبور", "القرآن"), 3)
+        )
+        var index = 0
+        var score = 0
+        var answered = false
+        lateinit var draw: () -> Unit
+        draw = {
+            base("المسابقة الإسلامية", "ثمانية أسئلة • اختر إجابة واحدة لكل سؤال")
+            if (index >= questions.size) {
+                root.addView(label("انتهت المسابقة", 25f, gold, true))
+                root.addView(label("نتيجتك: ${score} من ${questions.size}", 22f, cream, true))
+                root.addView(label(if (score == questions.size) "أحسنت! إجاباتك كلها صحيحة." else "واصل التعلم، ويمكنك إعادة المحاولة.", 15f, muted))
+                root.addView(button("إعادة المسابقة", true) { showQuiz() })
+                root.addView(button("الرئيسية", false) { showHome() })
+            } else {
+                val q = questions[index]
+                root.addView(label("السؤال ${index + 1} من ${questions.size}", 15f, gold, true))
+                root.addView(label(q.first, 22f, cream, true))
+                q.second.forEachIndexed { optionIndex, option ->
+                    root.addView(button("${'أ' + optionIndex}.  ${option}", false) {
+                        if (!answered) {
+                            answered = true
+                            val correct = optionIndex == q.third
+                            if (correct) score++
+                            root.addView(label(if (correct) "إجابة صحيحة ✓" else "ليست الإجابة الصحيحة. الإجابة: ${q.second[q.third]}", 16f, if (correct) Color.rgb(100, 210, 140) else gold, true))
+                            root.addView(button(if (index == questions.lastIndex) "عرض النتيجة" else "السؤال التالي", true) {
+                                index++
+                                answered = false
+                                draw()
+                            })
+                        }
+                    })
+                    root.addView(space(5))
+                }
+                root.addView(label("النقاط الحالية: ${score}", 13f, muted))
+                root.addView(button("إنهاء المسابقة", false) { index = questions.size; draw() })
+            }
+        }
+        draw()
+    }
+
+    private fun showNames() {
+        currentPage = "names"
+        val names = listOf(
+            "الرَّحْمَٰنُ" to "واسع الرحمة لجميع خلقه.",
+            "الرَّحِيمُ" to "الذي يرحم عباده المؤمنين.",
+            "الْمَلِكُ" to "المالك المتصرف في خلقه.",
+            "الْقُدُّوسُ" to "المنزّه عن كل نقص.",
+            "السَّلَامُ" to "السالم من كل عيب ونقص.",
+            "الْمُؤْمِنُ" to "الذي يؤمّن عباده ويصدق رسله.",
+            "الْعَزِيزُ" to "الغالب الذي لا يُغلب.",
+            "الْخَالِقُ" to "الذي أوجد الخلق.",
+            "الْغَفُورُ" to "كثير المغفرة لعباده.",
+            "الرَّزَّاقُ" to "الذي يرزق جميع خلقه.",
+            "الْعَلِيمُ" to "الذي أحاط علمه بكل شيء.",
+            "السَّمِيعُ" to "الذي يسمع جميع الأصوات.",
+            "الْبَصِيرُ" to "الذي يرى كل شيء.",
+            "الْحَكِيمُ" to "الذي يضع الأمور مواضعها.",
+            "اللَّطِيفُ" to "الرفيق بعباده، العالم بدقائق الأمور.",
+            "الْحَلِيمُ" to "الذي لا يعاجل عباده بالعقوبة.",
+            "الْكَرِيمُ" to "كثير الخير والعطاء.",
+            "التَّوَّابُ" to "الذي يقبل توبة عباده.",
+            "الْحَفِيظُ" to "الحافظ لكل شيء.",
+            "النُّورُ" to "نور السماوات والأرض."
+        )
+        base("أسماء الله الحسنى", "معانٍ موجزة لأسماء ثابتة في النصوص")
+        names.forEachIndexed { i, item ->
+            root.addView(label("${i + 1}. ${item.first}", 19f, gold, true))
+            root.addView(label(item.second, 15f, cream))
+            root.addView(space(5))
+        }
+        root.addView(label("هذه قائمة مختارة من عشرين اسمًا وليست عرضًا كاملًا للأسماء التسعة والتسعين، ومعاني الأسماء يُرجع فيها إلى كتب العقيدة والتفسير المعتمدة.", 12f, muted))
+        root.addView(button("الرئيسية", true) { showHome() })
     }
 
     private fun showComing(title: String) {
