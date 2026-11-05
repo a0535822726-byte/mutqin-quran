@@ -14,7 +14,8 @@ data class QuranSearchResult(
 
 object QuranSearchSource {
     fun search(query: String): Result<List<QuranSearchResult>> = runCatching {
-        val encoded = URLEncoder.encode(query.trim(), "UTF-8")
+        val normalizedQuery = QuranSearchValidation.query(query)
+        val encoded = URLEncoder.encode(normalizedQuery, "UTF-8")
         val connection = URL("https://api.alquran.cloud/v1/search/$encoded/all/ar").openConnection() as HttpURLConnection
         connection.requestMethod = "GET"
         connection.connectTimeout = 12000
@@ -33,10 +34,10 @@ object QuranSearchSource {
                     val item = matches.getJSONObject(i)
                     val surah = item.getJSONObject("surah")
                     add(
-                        QuranSearchResult(
+                        QuranSearchValidation.result(
                             surahName = surah.getString("name"),
-                            surahNumber = surah.getInt("number"),
-                            ayahNumber = item.getInt("numberInSurah"),
+                            surah = surah.getInt("number"),
+                            ayah = item.getInt("numberInSurah"),
                             text = item.getString("text")
                         )
                     )
