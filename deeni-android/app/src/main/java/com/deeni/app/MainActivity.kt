@@ -1088,7 +1088,7 @@ class MainActivity : Activity() {
                 val parts = value.split(":")
                 val surah = parts.getOrNull(0)?.toIntOrNull()
                 val ayah = parts.getOrNull(1)?.toIntOrNull()
-                if (surah != null && ayah != null && surah in 1..114 && ayah > 0) surah to ayah else null
+                if (surah != null && ayah != null && QuranReference.isValid(surah, ayah)) surah to ayah else null
             }?.sortedWith(compareBy<Pair<Int, Int>> { it.first }.thenBy { it.second }) ?: emptyList()
         if (saved.isEmpty()) {
             root.addView(label("لا توجد آيات محفوظة. ابحث في القرآن ثم اضغط حفظ الآية.", 15f, muted))
