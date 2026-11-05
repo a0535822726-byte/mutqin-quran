@@ -756,6 +756,13 @@ class MainActivity : Activity() {
         currentPage = "revision"
         val prefs = getSharedPreferences("deeni", MODE_PRIVATE)
         val items = listOf("مراجعة محفوظ الأمس", "حفظ مقدار جديد", "تثبيت آخر موضع", "تسميع ما تم حفظه")
+        val today = java.text.SimpleDateFormat("yyyy-MM-dd", Locale.US).format(java.util.Date())
+        if (prefs.getString("revision_day", null) != today) {
+            prefs.edit().apply {
+                prefs.all.keys.filter { it.startsWith("revision_") && it != "revision_day" }.forEach { remove(it) }
+                putString("revision_day", today)
+            }.apply()
+        }
         base("الحفظ والمراجعة", "خطة متابعة يومية — يتم حفظ إنجازك على الجهاز")
         val progress = label("", 16f, gold, true)
         root.addView(progress)
