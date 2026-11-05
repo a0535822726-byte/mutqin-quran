@@ -1,6 +1,7 @@
 package com.deeni.app
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class PrayerTimesRequestTest {
@@ -19,8 +20,8 @@ class PrayerTimesRequestTest {
     @Test
     fun encodesArabicAndReservedCharacters() {
         val url = PrayerTimesRequest.url("مكة المكرمة", "السعودية", 4)
-        assert(url.contains("city=%D9%85%D9%83%D8%A9+%D8%A7%D9%84%D9%85%D9%83%D8%B1%D9%85%D8%A9"))
-        assert(url.contains("country=%D8%A7%D9%84%D8%B3%D8%B9%D9%88%D8%AF%D9%8A%D8%A9"))
+        assertTrue(url.contains("city=%D9%85%D9%83%D8%A9+%D8%A7%D9%84%D9%85%D9%83%D8%B1%D9%85%D8%A9"))
+        assertTrue(url.contains("country=%D8%A7%D9%84%D8%B3%D8%B9%D9%88%D8%AF%D9%8A%D8%A9"))
     }
 
     @Test(expected = IllegalArgumentException::class)
