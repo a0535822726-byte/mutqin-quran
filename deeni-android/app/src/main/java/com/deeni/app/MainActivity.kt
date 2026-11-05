@@ -1,6 +1,10 @@
 package com.deeni.app
 
 import android.Manifest
+import android.hardware.Sensor
+import android.hardware.SensorEvent
+import android.hardware.SensorEventListener
+import android.hardware.SensorManager
 import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -29,6 +33,8 @@ class MainActivity : Activity() {
     private lateinit var root: LinearLayout
     private var recognizer: SpeechRecognizer? = null
     private var currentPage = "home"
+    private var qiblaSensorManager: SensorManager? = null
+    private var qiblaSensorListener: SensorEventListener? = null
     private var selectedReader = "ماهر المعيقلي"
     private var tasbeeh = 0
     private val readers = listOf("ماهر المعيقلي", "عبد الرحمن السديس", "ياسر الدوسري", "مشاري العفاسي", "محمود خليل الحصري", "محمد صديق المنشاوي", "عبد الباسط عبد الصمد", "سعد الغامدي", "أحمد العجمي", "علي جابر")
@@ -128,6 +134,7 @@ class MainActivity : Activity() {
         card("المسابقات الإسلامية", "اختبر معلوماتك في القرآن والسيرة والحديث", "🏆") { showQuiz() }
         card("أسماء الله الحسنى", "معانٍ مختصرة لأسماء الله الحسنى", "✧") { showNames() }
         card("مواقيت الصلاة", "اعرض مواقيت الصلاة حسب مدينتك", "◷") { showPrayerTimes() }
+        card("اتجاه القبلة", "بوصلة تتبع اتجاه القبلة بحساس الهاتف", "🧭") { showQibla() }
         root.addView(label("المصحف يعرض نص الصفحات عند الاتصال بالإنترنت. بعض الأدوات المتقدمة مثل التسميع المتخصص ومزامنة القراء ما زالت تحتاج محركًا واختبارات إضافية.", 12f, muted))
     }
 
@@ -630,6 +637,106 @@ class MainActivity : Activity() {
         root.addView(button("الرئيسية", false) { showHome() })
     }
 
+    private fun showQibla() {
+        currentPage = "qibla"
+        base("اتجاه القبلة", "حدد مدينتك ووجّه الهاتف أفقيًا بعيدًا عن المعادن")
+        val prefs = getSharedPreferences("deeni", MODE_PRIVATE)
+        val city = prefs.getString("prayer_city", "أبو عريش") ?: "أبو عريش"
+        root.addView(label("المدينة المستخدمة: ${city}", 14f, muted))
+        val status = label("جارٍ تحديد اتجاه القبلة…", 15f, gold, true)
+        root.addView(status)
+        val compass = QiblaCompassView(this).apply {
+            layoutParams = LinearLayout.LayoutParams(-1, 310)
+        }
+        root.addView(compass)
+        root.addView(label("إذا لم تتحرك البوصلة، فقد لا يدعم جهازك حساس الاتجاه أو يحتاج إلى معايرة.", 12f, muted))
+        root.addView(button("تحديث اتجاه القبلة", true) {
+            status.text = "جارٍ الحساب…"
+            Thread {
+                val result = PrayerTimesSource.load(city)
+                runOnUiThread {
+                    if (currentPage != "qibla") return@runOnUiThread
+                    if (result.isSuccess) {
+                        val data = result.getOrThrow()
+                        val bearing = qiblaBearing(data.latitude, data.longitude)
+                        status.text = "اتجاه القبلة: ${"%.1f".format(Locale.US, bearing)}° من الشمال الحقيقي"
+                        compass.setDirection(bearing.toFloat(), 0f)
+                        startQiblaSensor(compass, bearing.toFloat())
+                    } else {
+                        status.text = "تعذر تحديد المدينة. افتح مواقيت الصلاة وأدخل اسم المدينة بالإنجليزية."
+                    }
+                }
+            }.start()
+        })
+        root.addView(button("مواقيت الصلاة", false) { showPrayerTimes() })
+        root.addView(button("الرئيسية", false) { showHome() })
+        root.post {
+            Thread {
+                val result = PrayerTimesSource.load(city)
+                runOnUiThread {
+                    if (currentPage != "qibla") return@runOnUiThread
+                    if (result.isSuccess) {
+                        val data = result.getOrThrow()
+                        val bearing = qiblaBearing(data.latitude, data.longitude)
+                        status.text = "اتجاه القبلة: ${"%.1f".format(Locale.US, bearing)}° من الشمال الحقيقي"
+                        compass.setDirection(bearing.toFloat(), 0f)
+                        startQiblaSensor(compass, bearing.toFloat())
+                    } else {
+                        status.text = "تعذر تحديد اتجاه القبلة. تحقق من المدينة والإنترنت."
+                    }
+                }
+            }.start()
+        }
+    }
+
+    private fun qiblaBearing(latitude: Double, longitude: Double): Double {
+        val kaabaLat = Math.toRadians(21.4225)
+        val kaabaLon = Math.toRadians(39.8262)
+        val userLat = Math.toRadians(latitude)
+        val deltaLon = kaabaLon - Math.toRadians(longitude)
+        val y = kotlin.math.sin(deltaLon)
+        val x = kotlin.math.cos(userLat) * kotlin.math.tan(kaabaLat) -
+            kotlin.math.sin(userLat) * kotlin.math.cos(deltaLon)
+        return (Math.toDegrees(kotlin.math.atan2(y, x)) + 360.0) % 360.0
+    }
+
+    private fun startQiblaSensor(compass: QiblaCompassView, bearing: Float) {
+        stopQiblaSensor()
+        val manager = getSystemService(SENSOR_SERVICE) as SensorManager
+        val sensor = manager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR)
+        if (sensor == null) {
+            compass.setDirection(bearing, 0f)
+            return
+        }
+        val listener = object : SensorEventListener {
+            override fun onSensorChanged(event: SensorEvent) {
+                if (event.sensor.type != Sensor.TYPE_ROTATION_VECTOR) return
+                val rotation = FloatArray(9)
+                val orientation = FloatArray(3)
+                SensorManager.getRotationMatrixFromVector(rotation, event.values)
+                SensorManager.getOrientation(rotation, orientation)
+                val azimuth = Math.toDegrees(orientation[0].toDouble()).toFloat()
+                compass.setDirection(bearing, azimuth)
+            }
+            override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
+                if (accuracy == SensorManager.SENSOR_STATUS_UNRELIABLE) {
+                    Toast.makeText(this@MainActivity, "دقة البوصلة منخفضة؛ أبعد الهاتف عن مصادر التشويش وعايره.", Toast.LENGTH_LONG).show()
+                }
+            }
+        }
+        qiblaSensorManager = manager
+        qiblaSensorListener = listener
+        manager.registerListener(listener, sensor, SensorManager.SENSOR_DELAY_UI)
+    }
+
+    private fun stopQiblaSensor() {
+        val manager = qiblaSensorManager
+        val listener = qiblaSensorListener
+        if (manager != null && listener != null) manager.unregisterListener(listener)
+        qiblaSensorManager = null
+        qiblaSensorListener = null
+    }
+
     private fun showComing(title: String) {
         base(title, "هذا القسم ضمن خطة التطوير")
         root.addView(label("لن نضع محتوى غير موثق أو أزرارًا وهمية. سيُضاف هذا القسم بعد توفير مصادر موثوقة واختبار وظائفه.", 16f, cream))
@@ -643,5 +750,5 @@ class MainActivity : Activity() {
         }
     }
 
-    override fun onStop() { stopRecognition(); super.onStop() }
+    override fun onStop() { stopRecognition(); stopQiblaSensor(); super.onStop() }
 }
