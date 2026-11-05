@@ -24,7 +24,11 @@ object QuranPageSource {
             val envelope = JSONObject(body)
             check(envelope.optString("code") == "200") { "Quran service response was not successful" }
             val data = envelope.getJSONObject("data")
-            val text = QuranPageValidation.ayahText(surah, ayah, data.getString("text"))
+            val returnedSurah = data.getJSONObject("surah").getInt("number")
+            val returnedAyah = data.getInt("numberInSurah")
+            val text = QuranPageValidation.ayahResponse(
+                surah, ayah, returnedSurah, returnedAyah, data.getString("text")
+            )
             val page = QuranPageValidation.pageNumber(data.getInt("page"))
             text to page
         } finally {
@@ -47,7 +51,11 @@ object QuranPageSource {
             val envelope = JSONObject(body)
             check(envelope.optString("code") == "200") { "Quran service response was not successful" }
             val data = envelope.getJSONObject("data")
-            QuranPageValidation.ayahText(surah, ayah, data.getString("text"))
+            val returnedSurah = data.getJSONObject("surah").getInt("number")
+            val returnedAyah = data.getInt("numberInSurah")
+            QuranPageValidation.ayahResponse(
+                surah, ayah, returnedSurah, returnedAyah, data.getString("text")
+            )
         } finally {
             connection.disconnect()
         }
