@@ -84,14 +84,18 @@ object ReciterSource {
         require(surah in 1..114)
         require(timingReadId > 0)
         val rows = JSONArray(get("https://mp3quran.net/api/v3/ayat_timing?surah=$surah&read=$timingReadId"))
-        buildList {
+        val timings = buildList {
             for (i in 0 until rows.length()) {
                 val row = rows.getJSONObject(i)
-                val ayah = row.optInt("ayah", -1)
-                val start = row.optInt("start_time", -1)
-                val end = row.optInt("end_time", -1)
-                if (ayah > 0 && start >= 0 && end > start) add(AyahTiming(ayah, start, end))
+                add(
+                    AyahTiming(
+                        ayah = row.getInt("ayah"),
+                        startMs = row.getInt("start_time"),
+                        endMs = row.getInt("end_time")
+                    )
+                )
             }
-        }.sortedBy { it.startMs }
+        }
+        ReciterTimingValidation.validate(surah, timings)
     }
 }
