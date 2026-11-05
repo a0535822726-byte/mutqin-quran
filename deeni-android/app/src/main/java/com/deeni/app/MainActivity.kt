@@ -1138,6 +1138,25 @@ class MainActivity : Activity() {
             setPadding(14, 14, 14, 14)
             background = shape(panel, 16f)
         }
+        val methodOptions = listOf(
+            "أم القرى – السعودية" to 4,
+            "رابطة العالم الإسلامي" to 3,
+            "الهيئة المصرية العامة للمساحة" to 5,
+            "جامعة العلوم الإسلامية – كراتشي" to 1,
+            "الجمعية الإسلامية لأمريكا الشمالية" to 2,
+            "منطقة الخليج" to 8,
+            "الكويت" to 9,
+            "قطر" to 10,
+            "سنغافورة" to 11,
+            "تركيا" to 13,
+            "لجنة رؤية الهلال" to 15
+        )
+        val methodSpinner = Spinner(this).apply {
+            adapter = ArrayAdapter(this@MainActivity, android.R.layout.simple_spinner_dropdown_item, methodOptions.map { it.first })
+            val savedMethod = prefs.getInt("prayer_method", 4)
+            setSelection(methodOptions.indexOfFirst { it.second == savedMethod }.coerceAtLeast(0))
+            background = shape(panel, 14f)
+        }
         val city = EditText(this).apply {
             setText(initialCity)
             hint = "اسم المدينة بالإنجليزية، مثال: Abu Arish"
@@ -1152,23 +1171,27 @@ class MainActivity : Activity() {
         root.addView(country)
         root.addView(label("المدينة", 15f, gold, true))
         root.addView(city)
-        root.addView(label("اكتب اسم الدولة والمدينة بالإنجليزية. تُستخدم طريقة أم القرى للحساب، وقد تختلف دقائق قليلة عن تقويم المسجد المحلي.", 12f, muted))
+        root.addView(label("طريقة حساب مواقيت الصلاة", 15f, gold, true))
+        root.addView(methodSpinner)
+        root.addView(label("اختر الطريقة المعتمدة في بلدك؛ قد تختلف المواقيت عن تقويم المسجد المحلي.", 12f, muted))
         val result = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         root.addView(result)
         root.addView(button("عرض مواقيت اليوم", true) {
             val name = city.text.toString().trim()
             val countryName = country.text.toString().trim()
+            val methodCode = methodOptions[methodSpinner.selectedItemPosition].second
             if (name.isBlank() || countryName.isBlank()) {
                 Toast.makeText(this, "اكتب الدولة والمدينة أولًا", Toast.LENGTH_SHORT).show()
             } else {
                 getSharedPreferences("deeni", MODE_PRIVATE).edit()
                     .putString("prayer_city", name)
                     .putString("prayer_country", countryName)
+                    .putInt("prayer_method", methodCode)
                     .apply()
                 result.removeAllViews()
                 result.addView(label("جارٍ جلب المواقيت…", 15f, gold))
                 Thread {
-                    val response = PrayerTimesSource.load(name, countryName)
+                    val response = PrayerTimesSource.load(name, countryName, methodCode)
                     runOnUiThread {
                         if (currentPage != "prayer_times") return@runOnUiThread
                         result.removeAllViews()
@@ -1221,7 +1244,7 @@ class MainActivity : Activity() {
         root.addView(button("تحديث اتجاه القبلة", true) {
             status.text = "جارٍ الحساب…"
             Thread {
-                val result = PrayerTimesSource.load(city, country)
+                val result = PrayerTimesSource.load(city, country, prefs.getInt("prayer_method", 4))
                 runOnUiThread {
                     if (currentPage != "qibla") return@runOnUiThread
                     if (result.isSuccess) {
