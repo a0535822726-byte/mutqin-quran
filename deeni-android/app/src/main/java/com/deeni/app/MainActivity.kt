@@ -919,8 +919,11 @@ class MainActivity : Activity() {
     private fun showPrayerTimes() {
         currentPage = "prayer_times"
         base("مواقيت الصلاة", "المواقيت تُجلب حسب المدينة وطريقة الحساب المختارة")
+        val prefs = getSharedPreferences("deeni", MODE_PRIVATE)
+        val savedCity = prefs.getString("prayer_city", null)
+        val initialCity = if (savedCity.isNullOrBlank() || savedCity == "أبو عريش") "Abu Arish" else savedCity
         val city = EditText(this).apply {
-            setText(getSharedPreferences("deeni", MODE_PRIVATE).getString("prayer_city", "أبو عريش") ?: "أبو عريش")
+            setText(initialCity)
             hint = "اسم المدينة بالإنجليزية، مثال: Abu Arish"
             textSize = 16f
             setTextColor(cream)
@@ -931,7 +934,7 @@ class MainActivity : Activity() {
         }
         root.addView(label("المدينة", 15f, gold, true))
         root.addView(city)
-        root.addView(label("اكتب اسم المدينة بالإنجليزية لضمان تعرف خدمة المواقيت عليها.", 12f, muted))
+        root.addView(label("اكتب اسم المدينة بالإنجليزية لضمان تعرف خدمة المواقيت عليها. تُستخدم طريقة أم القرى للحساب، وقد تختلف دقائق قليلة عن تقويم المسجد المحلي.", 12f, muted))
         val result = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         root.addView(result)
         root.addView(button("عرض مواقيت اليوم", true) {
