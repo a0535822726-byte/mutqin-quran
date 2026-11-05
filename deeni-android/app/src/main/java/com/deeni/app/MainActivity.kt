@@ -229,6 +229,107 @@ class MainActivity : Activity() {
         setContentView(shell)
     }
 
+    private fun space(h: Int): View = View(this).apply { layoutParams = LinearLayout.LayoutParams(1, h) }
+
+    private fun card(title: String, desc: String, icon: String, action: () -> Unit) {
+        val box = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            background = shape(panel, 20f)
+            setPadding(16, 12, 16, 12)
+            addView(label(icon, 20f, gold, true))
+            addView(label(title, 17f, cream, true))
+            addView(label(desc, 12f, muted))
+            setOnClickListener { action() }
+        }
+        val p = LinearLayout.LayoutParams(-1, -2)
+        p.bottomMargin = 9
+        root.addView(box, p)
+    }
+
+    private fun showHome() {
+        currentPage = "home"
+        base("أهلًا بك في ديني", "رفيقك للقرآن والحفظ والعبادة")
+        val prefs = getSharedPreferences("deeni", MODE_PRIVATE)
+        val lastPage = prefs.getInt("mushaf_page", 1).coerceIn(1, 604)
+        val welcome = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            background = shape(panel2, 24f)
+            setPadding(18, 18, 18, 18)
+            addView(label("وَرَتِّلِ الْقُرْآنَ تَرْتِيلًا", 23f, gold, true))
+            addView(label("اجعل لك وردًا ثابتًا، وتابع قراءتك خطوة بخطوة.", 13f, cream))
+            addView(space(8))
+            addView(button("متابعة المصحف • الصفحة " + lastPage, true) { showQuran() })
+        }
+        root.addView(welcome)
+        root.addView(space(10))
+        val recite = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER
+            background = shape(panel, 20f)
+            setPadding(10, 12, 10, 12)
+        }
+        recite.addView(button("🎙 ابدأ التسميع", true) { showQuran(true) }, LinearLayout.LayoutParams(0, -2, 1f))
+        recite.addView(button("♫ استمع لقارئ", false) { showQuran(); chooseReader() }, LinearLayout.LayoutParams(0, -2, 1f))
+        root.addView(recite)
+
+        homeSection("ابدأ رحلتك")
+        homeTileRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+        homeTile("المصحف", "قراءة وتدبر", "۞") { showQuran() }
+        homeTile("التسميع", "تدريب صوتي", "🎙") { showQuran(true) }
+        root.addView(homeTileRow!!)
+        homeTileRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+        homeTile("الحفظ", "خطة يومية", "✦") { showRevision() }
+        homeTile("التفسير", "معاني الآيات", "📖") { showTafsir() }
+        root.addView(homeTileRow!!)
+
+        homeSection("القرآن وعلومه")
+        homeTileRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+        homeTile("البحث", "ابحث في الآيات", "⌕") { showQuranSearch() }
+        homeTile("المحفوظات", "آياتك وعلاماتك", "☆") { showSavedAyahs() }
+        root.addView(homeTileRow!!)
+        homeTileRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+        homeTile("التجويد", "أحكام التلاوة", "۞") { showTajweed() }
+        homeTile("القراء", "اختر صوتًا", "♫") { chooseReader() }
+        root.addView(homeTileRow!!)
+
+        homeSection("المكتبة الإسلامية")
+        homeTileRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+        homeTile("الحديث", "أحاديث ومراجع", "📜") { showIslamicLibrary() }
+        homeTile("السيرة", "السيرة النبوية", "☾") { showIslamicLibrary() }
+        root.addView(homeTileRow!!)
+        homeTileRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+        homeTile("قصص الأنبياء", "قصص قرآنية", "✧") { showProphetStories() }
+        homeTile("قصص الصحابة", "سير مختارة", "☼") { showCompanionStories() }
+        root.addView(homeTileRow!!)
+        homeTileRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+        homeTile("الأذكار", "أذكار وأدعية", "◉") { showAdhkar() }
+        homeTile("الفقه", "مبادئ أساسية", "⚖") { showFiqhBasics() }
+        root.addView(homeTileRow!!)
+
+        homeSection("التحديات والمسابقات")
+        val game = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            background = shape(panel2, 22f)
+            setPadding(16, 14, 16, 14)
+            addView(label("من سيربح المليون؟", 21f, gold, true))
+            addView(label("15 سؤالًا إسلاميًا • مراحل وجوائز افتراضية ووسائل مساعدة", 12f, cream))
+            addView(button("ابدأ اللعبة", true) { showMillionaire() })
+        }
+        root.addView(game)
+        root.addView(space(8))
+        root.addView(button("المسابقات الإسلامية", false) { showQuiz() })
+        root.addView(button("مواقيت الصلاة والقبلة", false) { showPrayerTimes() })
+        root.addView(button("الأسماء الحسنى", false) { showNames() })
+        root.addView(button("ملاحظاتي", false) { showNotes() })
+        root.addView(button(if (lightTheme) "الوضع الفاتح • التبديل للداكن" else "الوضع الداكن • التبديل للفاتح", false) {
+            lightTheme = !lightTheme
+            getSharedPreferences("deeni", MODE_PRIVATE).edit().putBoolean("light_theme", lightTheme).apply()
+            applyTheme()
+            showHome()
+        })
+        root.addView(label("التسميع الحالي استرشادي باستخدام التعرف الصوتي العام، وليس تصحيحًا متخصصًا للتلاوة أو التجويد.", 11f, muted))
+    }
+
     private fun homeTile(title: String, subtitle: String, icon: String, action: () -> Unit) {
         val tile = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
