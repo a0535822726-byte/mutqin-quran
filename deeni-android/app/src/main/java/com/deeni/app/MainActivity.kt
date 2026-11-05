@@ -961,6 +961,122 @@ class MainActivity : Activity() {
         root.addView(button("الرئيسية", false) { showHome() })
     }
 
+    private fun showMillionaire() {
+        val questions = listOf(
+            Triple("كم عدد الصلوات المفروضة في اليوم والليلة؟", listOf("ثلاث", "أربع", "خمس", "ست"), 2),
+            Triple("ما أول سورة في ترتيب المصحف؟", listOf("البقرة", "الفاتحة", "الإخلاص", "الناس"), 1),
+            Triple("ما أطول سورة في القرآن الكريم؟", listOf("آل عمران", "النساء", "البقرة", "المائدة"), 2),
+            Triple("من النبي الذي التقمه الحوت؟", listOf("موسى عليه السلام", "يونس عليه السلام", "يوسف عليه السلام", "نوح عليه السلام"), 1),
+            Triple("في أي شهر يصوم المسلمون؟", listOf("شعبان", "رمضان", "شوال", "محرم"), 1),
+            Triple("ما أول ما نزل من القرآن؟", listOf("يا أيها المدثر", "اقرأ باسم ربك", "الفاتحة", "قل هو الله أحد"), 1),
+            Triple("كم عدد أركان الإسلام؟", listOf("أربعة", "خمسة", "ستة", "سبعة"), 1),
+            Triple("في أي غار كان النبي ﷺ يتعبد قبل البعثة؟", listOf("ثور", "حراء", "أحد", "النور"), 1),
+            Triple("من النبي الذي رفع قواعد الكعبة مع ابنه؟", listOf("إبراهيم عليه السلام", "يعقوب عليه السلام", "داود عليه السلام", "زكريا عليه السلام"), 0),
+            Triple("ما السورة التي لا تبدأ بالبسملة؟", listOf("الأنفال", "التوبة", "يونس", "مريم"), 1),
+            Triple("ما أقصر سورة في القرآن؟", listOf("العصر", "الكوثر", "النصر", "الإخلاص"), 1),
+            Triple("من أول الخلفاء الراشدين؟", listOf("عمر بن الخطاب", "عثمان بن عفان", "أبو بكر الصديق", "علي بن أبي طالب"), 2),
+            Triple("في أي سنة هجرية وقعت غزوة بدر؟", listOf("الأولى", "الثانية", "الثالثة", "الخامسة"), 1),
+            Triple("من أول زوجات النبي ﷺ؟", listOf("عائشة رضي الله عنها", "حفصة رضي الله عنها", "خديجة رضي الله عنها", "زينب رضي الله عنها"), 2),
+            Triple("في أي سورة تقع آية الكرسي؟", listOf("آل عمران", "النساء", "البقرة", "المائدة"), 2)
+        )
+        val prizes = listOf("100", "200", "300", "500", "1,000", "2,000", "4,000", "8,000", "16,000", "32,000", "64,000", "125,000", "250,000", "500,000", "1,000,000")
+        var index = 0
+        var eliminated = emptySet<Int>()
+        var used5050 = false
+        var usedAudience = false
+        var usedSkip = false
+        var finished = false
+        var won = false
+        var message = ""
+        lateinit var draw: () -> Unit
+        draw = {
+            currentPage = "millionaire"
+            base("من سيربح المليون", "مسابقة معرفية إسلامية • 15 مرحلة")
+            if (finished || index >= questions.size) {
+                root.addView(label(if (won) "مبارك! أكملت جميع المراحل" else "انتهت الجولة", 24f, gold, true))
+                val score = if (won) prizes.last() else if (index > 0) prizes[index - 1] else "0"
+                root.addView(label("رصيدك الافتراضي: " + score + " نقطة", 19f, cream, true))
+                root.addView(label(if (message.isBlank()) "أحسنت على المشاركة، ويمكنك إعادة المحاولة." else message, 14f, muted))
+                root.addView(button("العب من جديد", true) { showMillionaire() })
+                root.addView(button("العودة للرئيسية", false) { showHome() })
+            } else {
+                val q = questions[index]
+                root.addView(label("المرحلة " + (index + 1) + " من 15", 15f, gold, true))
+                root.addView(label("الجائزة الافتراضية: " + prizes[index] + " نقطة", 14f, muted))
+                val questionCard = LinearLayout(this).apply {
+                    orientation = LinearLayout.VERTICAL
+                    background = shape(panel2, 22f)
+                    setPadding(18, 20, 18, 20)
+                    addView(label("السؤال " + (index + 1), 13f, gold, true))
+                    addView(label(q.first, 21f, cream, true))
+                }
+                root.addView(questionCard)
+                root.addView(space(10))
+                q.second.forEachIndexed { optionIndex, option ->
+                    if (optionIndex !in eliminated) {
+                        root.addView(button(('أ' + optionIndex).toString() + "   " + option, false) {
+                            if (optionIndex == q.third) {
+                                index++
+                                eliminated = emptySet()
+                                if (index == questions.size) { won = true; finished = true }
+                                draw()
+                            } else {
+                                message = "الإجابة الصحيحة: " + q.second[q.third]
+                                finished = true
+                                won = false
+                                draw()
+                            }
+                        })
+                        root.addView(space(6))
+                    }
+                }
+                root.addView(space(8))
+                root.addView(label("وسائل المساعدة — لكل وسيلة استخدام واحد", 13f, muted))
+                val aids = LinearLayout(this).apply {
+                    orientation = LinearLayout.HORIZONTAL
+                    gravity = Gravity.CENTER
+                }
+                aids.addView(button(if (used5050) "50:50 ✓" else "50:50", false) {
+                    if (!used5050) {
+                        used5050 = true
+                        eliminated = q.second.indices.filter { it != q.third }.shuffled().take(2).toSet()
+                        draw()
+                    }
+                }, LinearLayout.LayoutParams(0, -2, 1f))
+                aids.addView(button(if (usedAudience) "الجمهور ✓" else "الجمهور", false) {
+                    if (!usedAudience) {
+                        usedAudience = true
+                        val correctPct = (52..78).random()
+                        val others = q.second.indices.filter { it != q.third && it !in eliminated }
+                        val each = if (others.isEmpty()) 0 else (100 - correctPct) / others.size
+                        val result = q.second.indices.joinToString("\n") { i ->
+                            val pct = if (i == q.third) correctPct else if (i in others) each else 0
+                            ('أ' + i).toString() + ": " + pct + "%"
+                        }
+                        Toast.makeText(this, "تصويت افتراضي للتجربة:\n" + result, Toast.LENGTH_LONG).show()
+                    }
+                }, LinearLayout.LayoutParams(0, -2, 1f))
+                aids.addView(button(if (usedSkip) "تخطي ✓" else "تخطي", false) {
+                    if (!usedSkip) {
+                        usedSkip = true
+                        index++
+                        eliminated = emptySet()
+                        if (index == questions.size) { won = true; finished = true }
+                        draw()
+                    }
+                }, LinearLayout.LayoutParams(0, -2, 1f))
+                root.addView(aids)
+                root.addView(button("انسحاب والاحتفاظ بالنقاط", false) {
+                    finished = true
+                    won = false
+                    message = "أنهيت الجولة باختيارك."
+                    draw()
+                })
+            }
+        }
+        draw()
+    }
+
     private fun showQuiz() {
         currentPage = "quiz"
         val questions = listOf(
