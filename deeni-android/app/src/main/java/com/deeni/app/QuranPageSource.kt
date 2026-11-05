@@ -9,6 +9,28 @@ import java.net.URL
  * The caller must run this on a worker thread.
  */
 object QuranPageSource {
+    fun loadAyah(surah: Int, ayah: Int): Result<String> = runCatching {
+        require(surah in 1..114) { "Surah number must be between 1 and 114" }
+        require(ayah in 1..286) { "Ayah number is out of range" }
+        val connection = (URL("https://api.alquran.cloud/v1/ayah/$surah:$ayah/quran-uthmani").openConnection() as HttpURLConnection)
+        connection.requestMethod = "GET"
+        connection.connectTimeout = 12000
+        connection.readTimeout = 15000
+        connection.setRequestProperty("Accept", "application/json")
+        try {
+            val code = connection.responseCode
+            val stream = if (code in 200..299) connection.inputStream else connection.errorStream
+            val body = stream.bufferedReader(Charsets.UTF_8).use { it.readText() }
+            check(code in 200..299) { "Quran service returned HTTP $code" }
+            val envelope = JSONObject(body)
+            check(envelope.optString("code") == "200") { "Quran service response was not successful" }
+            val data = envelope.getJSONObject("data")
+            data.getString("text")
+        } finally {
+            connection.disconnect()
+        }
+    }
+
     fun load(page: Int): Result<String> = runCatching {
         require(page in 1..604) { "Page must be between 1 and 604" }
         val connection = (URL("https://api.alquran.cloud/v1/page/$page/quran-uthmani").openConnection() as HttpURLConnection)
