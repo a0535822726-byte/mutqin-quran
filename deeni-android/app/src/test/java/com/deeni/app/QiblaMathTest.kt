@@ -26,8 +26,34 @@ class QiblaMathTest {
     }
 
     @Test
+    fun relativeAngleAcceptsNegativeSensorAzimuth() {
+        assertEquals(10f, QiblaMath.relativeAngle(0f, -10f), 0.001f)
+        assertEquals(-10f, QiblaMath.relativeAngle(-10f, 0f), 0.001f)
+    }
+
+    @Test
     fun relativeAngleStaysWithinHalfTurn() {
         val angle = QiblaMath.relativeAngle(270f, 90f)
         assertEquals(180f, kotlin.math.abs(angle), 0.001f)
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun rejectsLatitudeOutsideEarthRange() {
+        QiblaMath.bearing(91.0, 0.0)
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun rejectsLongitudeOutsideEarthRange() {
+        QiblaMath.bearing(0.0, 181.0)
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun rejectsNonFiniteCoordinates() {
+        QiblaMath.bearing(Double.NaN, 0.0)
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun rejectsNonFiniteCompassAngles() {
+        QiblaMath.relativeAngle(Float.NaN, 0f)
     }
 }
