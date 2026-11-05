@@ -363,10 +363,10 @@ class MainActivity : Activity() {
             }
         })
         root.addView(space(14))
-        root.addView(label("التسميع الصوتي", 20f, cream, true))
+        root.addView(label("التفريغ الصوتي العام", 20f, cream, true))
         root.addView(label("التعرف الصوتي العام قد يخطئ في ألفاظ القرآن؛ هذه الأداة ليست محركًا متخصصًا ولا تصحح التجويد.", 13f, muted))
         root.addView(label("خصوصية الصوت: لا يحفظ تطبيق ديني تسجيلًا صوتيًا. قد تعالج خدمة التعرف الصوتي في الهاتف الكلام وفق إعداداتها وسياسة مزودها؛ أوقف الميكروفون بعد الانتهاء.", 12f, muted))
-        val status = label("تفريغ صوتي عام — ليس تصحيحًا للقرآن", 14f, gold, true)
+        val status = label("التعرف الصوتي غير متخصص في القرآن", 14f, gold, true)
         root.addView(status)
         val live = TextView(this).apply { text = "النص الملتقط يظهر هنا"; textSize = 17f; setTextColor(cream); background = shape(panel, 16f); setPadding(14, 14, 14, 14) }
         root.addView(live)
@@ -376,7 +376,7 @@ class MainActivity : Activity() {
             layoutDirection = View.LAYOUT_DIRECTION_LTR
         }
         recitationControls.addView(
-            button("🎙 ابدأ", true) { beginRecognition(status, live, mutableListOf()) },
+            button("🎙 ابدأ التفريغ", true) { beginRecognition(status, live, mutableListOf()) },
             LinearLayout.LayoutParams(0, -2, 1f)
         )
         recitationControls.addView(
@@ -384,7 +384,7 @@ class MainActivity : Activity() {
             LinearLayout.LayoutParams(0, -2, 1f)
         )
         root.addView(recitationControls)
-        root.addView(button("إيقاف التسميع", false) { stopRecognition(); status.text = "تم إيقاف التسميع" })
+        root.addView(button("إيقاف الميكروفون", false) { stopRecognition(); status.text = "تم إيقاف الميكروفون" })
         root.addView(button("العودة للرئيسية", false) { stopRecognition(); showHome() })
         loadMushafPage(mushafPage)
         if (startMic) root.post { beginRecognition(status, live, mutableListOf()) }
