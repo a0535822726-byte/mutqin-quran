@@ -7,13 +7,18 @@ internal object TafsirValidation {
         requestedAyah: Int,
         returnedSurah: Int,
         returnedAyah: Int,
+        tafsirSurah: Int,
+        tafsirAyah: Int,
         surahName: String,
         ayahText: String,
         tafsirText: String
     ): TafsirResult {
         QuranReference.requireValid(requestedSurah, requestedAyah)
         require(returnedSurah == requestedSurah && returnedAyah == requestedAyah) {
-            "Tafsir service returned a different ayah"
+            "Quran edition returned a different ayah"
+        }
+        require(tafsirSurah == requestedSurah && tafsirAyah == requestedAyah) {
+            "Tafsir edition returned a different ayah"
         }
         require(surahName.isNotBlank()) { "Missing surah name" }
         require(ayahText.isNotBlank()) { "Missing Quran ayah text" }
