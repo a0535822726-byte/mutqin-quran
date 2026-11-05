@@ -21,7 +21,7 @@ class QiblaCompassView(context: Context) : View(context) {
     }
 
     fun setDirection(qiblaBearing: Float, deviceAzimuth: Float) {
-        relativeAngle = ((qiblaBearing - deviceAzimuth + 540f) % 360f) - 180f
+        relativeAngle = QiblaMath.relativeAngle(qiblaBearing, deviceAzimuth)
         contentDescription = "اتجاه القبلة ${"%.0f".format(qiblaBearing)} درجة من الشمال، والسهم يوضح اتجاهها على الشاشة."
         invalidate()
     }
