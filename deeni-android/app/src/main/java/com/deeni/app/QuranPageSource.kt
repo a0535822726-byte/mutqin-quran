@@ -10,8 +10,7 @@ import java.net.URL
  */
 object QuranPageSource {
     fun loadAyahDetails(surah: Int, ayah: Int): Result<Pair<String, Int>> = runCatching {
-        require(surah in 1..114) { "Surah number must be between 1 and 114" }
-        require(ayah in 1..286) { "Ayah number is out of range" }
+        QuranReference.requireValid(surah, ayah)
         val connection = (URL("https://api.alquran.cloud/v1/ayah/$surah:$ayah/quran-uthmani").openConnection() as HttpURLConnection)
         connection.requestMethod = "GET"
         connection.connectTimeout = 12000
@@ -32,8 +31,7 @@ object QuranPageSource {
     }
 
     fun loadAyah(surah: Int, ayah: Int): Result<String> = runCatching {
-        require(surah in 1..114) { "Surah number must be between 1 and 114" }
-        require(ayah in 1..286) { "Ayah number is out of range" }
+        QuranReference.requireValid(surah, ayah)
         val connection = (URL("https://api.alquran.cloud/v1/ayah/$surah:$ayah/quran-uthmani").openConnection() as HttpURLConnection)
         connection.requestMethod = "GET"
         connection.connectTimeout = 12000
