@@ -561,7 +561,7 @@ class DeeniActivity : Activity(), SensorEventListener {
         val saved = prefs.getStringSet("saved_ayahs", emptySet())?.size ?: 0
         val tasks = (0..3).count { prefs.getBoolean("task_" + it, false) }
         val tajweedDone = prefs.getStringSet("tajweed_done", emptySet())?.size ?: 0
-        val bestQuiz = prefs.getInt("best_quiz_score", 0)
+        val bestQuiz = prefs.getInt("best_quiz_score_30", 0)
         val dhikrTotal = (0..11).sumOf { prefs.getInt("dhikr_" + it, 0) }
         val tasbeehCount = prefs.getInt("tasbeeh", 0)
         card("الآيات المحفوظة", saved.toString() + " آية", "☆") { showSaved() }
@@ -1155,8 +1155,8 @@ class DeeniActivity : Activity(), SensorEventListener {
         fun render() {
             options.removeAllViews()
             if (index >= qs.size) {
-                val best = maxOf(prefs.getInt("best_quiz_score", 0), score)
-                prefs.edit().putInt("best_quiz_score", best).apply()
+                val best = maxOf(prefs.getInt("best_quiz_score_30", 0), score)
+                prefs.edit().putInt("best_quiz_score_30", best).apply()
                 prompt.text = "انتهت المسابقة. نتيجتك: " + score + " من " + qs.size + "\nأفضل نتيجة محفوظة: " + best
                 options.addView(button("إعادة المسابقة", true) {
                     index = 0
