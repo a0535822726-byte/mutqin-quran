@@ -557,6 +557,7 @@ class DeeniActivity : Activity(), SensorEventListener {
         screen("القبلة", "بوصلة حية من أبو عريش إلى الكعبة")
         qiblaBearing = QiblaMath.bearingDegrees(abuArishLatitude, abuArishLongitude).toFloat()
         compassView = QiblaCompassView(this)
+        compassView?.setDirection(qiblaBearing, 0f)
         root?.addView(compassView, LinearLayout.LayoutParams(280, 280).apply {
             gravity = Gravity.CENTER
         })
