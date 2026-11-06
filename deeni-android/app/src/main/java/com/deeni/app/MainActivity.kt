@@ -930,11 +930,15 @@ class MainActivity : Activity() {
             live.text = "النص الذي التقطه الجهاز:\n$spoken\n\nيمكنك تحديد آية من المصحف لعرض مقارنة نصية استرشادية، أو متابعة القراءة دون تحديد آية. هذا التفريغ ليس تصحيحًا قرآنيًا أو حكمًا على صحة التلاوة."
             return
         }
-        val comparison = QuranTextComparison.compare(reference, spoken)
-        val missing = comparison.missingFromTranscript.take(8).joinToString("، ").ifBlank { "لا توجد" }
-        val extra = comparison.extraInTranscript.take(8).joinToString("، ").ifBlank { "لا توجد" }
-        val matched = "${comparison.matchedWordCount} من ${comparison.expectedWordCount}"
-        live.text = "النص الذي التقطه الجهاز:\n$spoken\n\nمقارنة نصية مبدئية للآية المحددة:\nكلمات لم تظهر في النص الملتقط: $missing\nكلمات إضافية في النص الملتقط: $extra\nالكلمات المتطابقة بالترتيب: $matched\n\nتنبيه مهم: قد يخطئ محرك التعرف الصوتي في سماع القرآن؛ هذه فروق بين نصين فقط، وليست حكمًا بأنك أخطأت في التلاوة، ولا تقيس التجويد أو مخارج الحروف."
+        val alignment = QuranWordAlignmentEngine.align(reference, spoken)
+        val missing = alignment.missingExpected.take(8)
+            .joinToString("، ") { "${it.index + 1}: ${it.text}" }.ifBlank { "لا توجد" }
+        val extra = alignment.extraTranscript.take(8)
+            .joinToString("، ") { "${it.index + 1}: ${it.text}" }.ifBlank { "لا توجد" }
+        val matchedPositions = alignment.matches.takeLast(12)
+            .joinToString("، ") { (it.expected.index + 1).toString() }.ifBlank { "لا توجد بعد" }
+        val matched = "${alignment.matches.size} من ${alignment.expectedWordCount}"
+        live.text = "النص الذي التقطه الجهاز:\n$spoken\n\nمحاذاة نصية مبدئية لكلمات الآية المحددة:\nمواضع الكلمات المتطابقة في الآية: $matchedPositions\nكلمات لم تظهر في النص الملتقط (رقم الكلمة: النص): $missing\nكلمات إضافية في النص الملتقط: $extra\nالكلمات المتطابقة بالترتيب: $matched\n\nتنبيه مهم: أرقام المواضع هي ترتيب الكلمات داخل نص الآية فقط، وليست تحديدًا بصريًا على صفحة المصحف. قد يخطئ محرك التعرف الصوتي في سماع القرآن؛ هذه مقارنة استرشادية بين نصين، وليست حكمًا بأنك أخطأت في التلاوة، ولا تقيس التجويد أو مخارج الحروف."
     }
 
     private fun stopRecognition() {
