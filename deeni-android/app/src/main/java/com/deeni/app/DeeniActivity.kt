@@ -219,16 +219,39 @@ class DeeniActivity : Activity(), SensorEventListener {
     }
 
     private fun tiles(a: String, ad: String, ac: () -> Unit, b: String, bd: String, bc: () -> Unit) {
-        val row = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
-        listOf(Triple(a, ad, ac), Triple(b, bd, bc)).forEach { item ->
+        val row = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            layoutDirection = View.LAYOUT_DIRECTION_RTL
+        }
+        listOf(Triple(a, ad, ac), Triple(b, bd, bc)).forEachIndexed { index, item ->
             val v = LinearLayout(this).apply {
-                orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER
-                background = shape(panel()); elevation = 2f; setPadding(7, 14, 7, 14)
-                addView(label(item.first, 15f, accent(), true).apply { gravity = Gravity.CENTER })
-                addView(label(item.second, 11f, muted()).apply { gravity = Gravity.CENTER })
+                orientation = LinearLayout.VERTICAL
+                gravity = Gravity.CENTER_VERTICAL
+                background = GradientDrawable(
+                    GradientDrawable.Orientation.TL_BR,
+                    if (light) {
+                        if (index == 0) intArrayOf(Color.WHITE, Color.rgb(246, 239, 222))
+                        else intArrayOf(Color.WHITE, Color.rgb(239, 243, 235))
+                    } else {
+                        if (index == 0) intArrayOf(Color.rgb(25, 43, 72), Color.rgb(13, 25, 48))
+                        else intArrayOf(Color.rgb(19, 39, 54), Color.rgb(10, 24, 39))
+                    }
+                ).apply {
+                    cornerRadius = 22f
+                    setStroke(1, if (light) Color.rgb(225, 213, 188) else Color.rgb(48, 68, 91))
+                }
+                elevation = 4f
+                setPadding(13, 13, 13, 13)
+                minimumHeight = 104
+                isClickable = true
+                isFocusable = true
+                addView(label(if (index == 0) "✦" else "◆", 17f, accent(), true))
+                addView(label(item.first, 16f, ink(), true))
+                addView(label(item.second, 11f, muted()))
                 setOnClickListener { item.third() }
             }
-            val p = LinearLayout.LayoutParams(0, -2, 1f); p.setMargins(4, 4, 4, 4)
+            val p = LinearLayout.LayoutParams(0, -2, 1f)
+            p.setMargins(4, 5, 4, 5)
             row.addView(v, p)
         }
         root?.addView(row)
