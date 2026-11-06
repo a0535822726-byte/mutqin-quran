@@ -529,10 +529,12 @@ class DeeniActivity : Activity(), SensorEventListener {
         val tajweedDone = prefs.getStringSet("tajweed_done", emptySet())?.size ?: 0
         val bestQuiz = prefs.getInt("best_quiz_score", 0)
         val dhikrTotal = (0..11).sumOf { prefs.getInt("dhikr_" + it, 0) }
+        val tasbeehCount = prefs.getInt("tasbeeh", 0)
         card("الآيات المحفوظة", saved.toString() + " آية", "☆") { showSaved() }
         card("مهام اليوم", tasks.toString() + " من 4", "✓") { showMemorization() }
         card("دروس التجويد التي راجعتها", tajweedDone.toString() + " من 50 درسًا", "۞") { showTajweed() }
         card("مجموع الأذكار المسجلة", dhikrTotal.toString() + " تكرار", "◉") { showAdhkar() }
+        card("عداد التسبيح المستقل", tasbeehCount.toString() + " تكرار", "◉") { showTasbeeh() }
         card("أفضل نتيجة في المسابقة", bestQuiz.toString() + " من 20", "★") { showQuiz() }
         card("آخر موضع", "صفحة " + page + " من 604", "۞") { showQuran() }
     }
