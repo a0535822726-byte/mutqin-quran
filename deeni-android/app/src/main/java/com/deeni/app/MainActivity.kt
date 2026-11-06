@@ -331,6 +331,11 @@ class MainActivity : Activity() {
             addView(label("اجعل لك وردًا ثابتًا، وتابع قراءتك خطوة بخطوة.", 13f, cream))
             addView(space(8))
             addView(button("متابعة المصحف • الصفحة " + lastPage, true) { showQuran() })
+            addView(space(7))
+            addView(button("ابدأ من الفاتحة • الصفحة 1", false) {
+                getSharedPreferences("deeni", MODE_PRIVATE).edit().putInt("mushaf_page", 1).apply()
+                showQuran()
+            })
         }
         root.addView(welcome)
         root.addView(space(10))
