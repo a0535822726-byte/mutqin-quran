@@ -485,8 +485,19 @@ class DeeniActivity : Activity(), SensorEventListener {
                     runOnUiThread {
                         results.removeAllViews()
                         if (found.isSuccess) found.getOrThrow().take(30).forEach { row ->
-                            results.addView(label("سورة " + row.surahName + " • الآية " + row.ayahNumber, 13f, accent(), true))
-                            results.addView(label(row.text, 18f))
+                            results.addView(button(
+                                "سورة " + row.surahName + " • الآية " + row.ayahNumber + "\\n" + row.text,
+                                false
+                            ) {
+                                Thread {
+                                    val pageResult = QuranPageSource.loadAyahDetails(row.surahNumber, row.ayahNumber)
+                                    runOnUiThread {
+                                        if (pageResult.isSuccess) loadPage(pageResult.getOrThrow().second)
+                                        else Toast.makeText(this, "تعذر فتح موضع الآية.", Toast.LENGTH_SHORT).show()
+                                    }
+                                }.start()
+                            })
+                            results.addView(gap(7))
                         } else results.addView(label("تعذر البحث الآن؛ تحقق من الاتصال.", 14f, accent()))
                     }
                 }.start()
