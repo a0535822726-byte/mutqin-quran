@@ -486,7 +486,7 @@ class DeeniActivity : Activity(), SensorEventListener {
                         results.removeAllViews()
                         if (found.isSuccess) found.getOrThrow().take(30).forEach { row ->
                             results.addView(button(
-                                "سورة " + row.surahName + " • الآية " + row.ayahNumber + "\\n" + row.text,
+                                "سورة " + row.surahName + " • الآية " + row.ayahNumber + "\n" + row.text,
                                 false
                             ) {
                                 Thread {
