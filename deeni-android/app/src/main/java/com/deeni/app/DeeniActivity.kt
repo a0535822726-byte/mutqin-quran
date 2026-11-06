@@ -255,7 +255,7 @@ class DeeniActivity : Activity(), SensorEventListener {
         tiles("الصلاة", "مواقيت أبو عريش", { showPrayer() }, "القبلة", "اتجاه مكة", { showQibla() })
         tiles("الأذكار", "أذكار مختارة", { showAdhkar() }, "التسبيح", "عداد محفوظ", { showTasbeeh() })
         heading("المكتبة الإسلامية")
-        tiles("السيرة", "محطات نبوية", { showSirah() }, "الحديث", "28 حديثًا مع الشرح والمصدر", { showHadith() })
+        tiles("السيرة", "9 محطات مع مراجع", { showSirah() }, "الحديث", "28 حديثًا مع الشرح والمصدر", { showHadith() })
         tiles("الأنبياء", "18 قصة مع مراجع", { showStories(false) }, "الصحابة", "17 سيرة مع مراجع", { showStories(true) })
         tiles("التجويد", "50 درسًا قابلًا للبحث", { showTajweed() }, "الفقه", "12 بابًا قابلًا للبحث", { showFiqh() })
         heading("أدوات أخرى")
