@@ -1073,20 +1073,74 @@ class DeeniActivity : Activity(), SensorEventListener {
     }
 
     private fun showNames() {
-        screen("الأسماء الحسنى", "أسماء ومعانٍ موجزة")
-        listOf(
+        val names = listOf(
             "الرحمن" to "واسع الرحمة بخلقه.",
             "الرحيم" to "ذو الرحمة بعباده.",
             "الملك" to "المالك المتصرف في خلقه.",
             "القدوس" to "المنزه عن كل نقص.",
-            "السلام" to "السالم من كل نقص.",
+            "السلام" to "السالم من كل نقص، ومنه السلامة.",
+            "المؤمن" to "الذي يؤمن عباده ويصدق رسله.",
+            "المهيمن" to "الرقيب الحافظ على كل شيء.",
             "العزيز" to "الغالب الذي لا يُغلب.",
-            "الغفور" to "كثير المغفرة لعباده.",
+            "الجبار" to "العالي القاهر، وجابر كسر عباده.",
+            "المتكبر" to "المتعالي عن صفات النقص.",
+            "الخالق" to "الذي أوجد المخلوقات وقدرها.",
+            "البارئ" to "الذي أنشأ الخلق وأوجدهم.",
+            "المصور" to "الذي أعطى كل مخلوق صورته.",
+            "الغفار" to "كثير المغفرة لعباده.",
+            "القهار" to "الغالب القاهر لكل شيء.",
+            "الوهاب" to "كثير العطاء والهبات.",
             "الرزاق" to "الذي يرزق خلقه.",
+            "الفتاح" to "الذي يفتح أبواب الرحمة ويحكم بين عباده بالحق.",
             "العليم" to "المحيط علمه بكل شيء.",
-            "الحكيم" to "ذو الحكمة في خلقه وأمره."
-        ).forEachIndexed { i, item -> card((i + 1).toString() + ". " + item.first, item.second, "✧") {} }
-        root?.addView(label("هذه عشرة أسماء كبداية وليست القائمة الكاملة.", 11f, muted()))
+            "السميع" to "الذي يسمع جميع الأصوات.",
+            "البصير" to "الذي يرى جميع الأشياء.",
+            "الحكيم" to "ذو الحكمة في خلقه وأمره.",
+            "اللطيف" to "البر بعباده، العالم بدقائق الأمور.",
+            "الخبير" to "العالم ببواطن الأشياء وخفاياها.",
+            "الحليم" to "الذي لا يعجل بالعقوبة مع قدرته.",
+            "العظيم" to "المتصف بالعظمة والكمال.",
+            "الشكور" to "الذي يثيب على العمل القليل ثوابًا كثيرًا.",
+            "العلي" to "المتعالي فوق خلقه، وله علو القدر والقهر.",
+            "الكبير" to "العظيم الذي كل شيء دونه.",
+            "الحفيظ" to "الحافظ لكل شيء، لا يعزب عنه شيء."
+        )
+        screen("الأسماء الحسنى", names.size.toString() + " اسمًا ومعنى موجزًا")
+        root?.addView(label("ابحث عن الاسم أو معناه. هذه دفعة تعليمية من الأسماء وليست ادعاءً بحصر الأسماء التسعة والتسعين.", 12f, muted()))
+        val search = SearchView(this).apply {
+            queryHint = "ابحث في الأسماء الحسنى…"
+            isIconifiedByDefault = false
+        }
+        root?.addView(search)
+        val results = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        root?.addView(results)
+        fun renderNames(query: String) {
+            results.removeAllViews()
+            val found = names.filter { it.first.contains(query.trim(), true) || it.second.contains(query.trim(), true) }
+            found.forEachIndexed { index, item ->
+                results.addView(button((index + 1).toString() + ". " + item.first, false) {
+                    AlertDialog.Builder(this)
+                        .setTitle(item.first)
+                        .setMessage(item.second)
+                        .setPositiveButton("إغلاق", null)
+                        .show()
+                })
+                results.addView(gap(7))
+            }
+            if (found.isEmpty()) results.addView(label("لا توجد أسماء تطابق البحث.", 14f, muted()))
+        }
+        search.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
+            override fun onQueryTextSubmit(query: String?): Boolean {
+                renderNames(query.orEmpty())
+                search.clearFocus()
+                return true
+            }
+            override fun onQueryTextChange(newText: String?): Boolean {
+                renderNames(newText.orEmpty())
+                return true
+            }
+        })
+        renderNames("")
     }
 
     private fun showNotes() {
