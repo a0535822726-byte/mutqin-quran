@@ -102,7 +102,49 @@ class MainActivity : Activity() {
         applyTheme()
         tasbeeh = getSharedPreferences("deeni", MODE_PRIVATE).getInt("tasbeeh", 0)
         selectedReader = getSharedPreferences("deeni", MODE_PRIVATE).getString("reader", readers[0]) ?: readers[0]
-        showHome()
+        showSplash()
+    }
+
+    /** White opening screen, then enter directly into the saved Madinah Mushaf page. */
+    private fun showSplash() {
+        val splash = FrameLayout(this).apply {
+            setBackgroundColor(Color.WHITE)
+            layoutDirection = View.LAYOUT_DIRECTION_LTR
+        }
+        val center = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = Gravity.CENTER
+            layoutDirection = View.LAYOUT_DIRECTION_RTL
+        }
+        val basmala = TextView(this).apply {
+            text = "بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ"
+            textSize = 31f
+            setTextColor(Color.BLACK)
+            gravity = Gravity.CENTER
+            typeface = Typeface.create("serif", Typeface.NORMAL)
+        }
+        val brand = TextView(this).apply {
+            text = "ديني  |  DEENI"
+            textSize = 17f
+            setTextColor(Color.rgb(45, 67, 55))
+            gravity = Gravity.CENTER
+            letterSpacing = 0.08f
+            setPadding(0, 18, 0, 0)
+        }
+        center.addView(basmala)
+        center.addView(brand)
+        splash.addView(center, FrameLayout.LayoutParams(-1, -1))
+        setContentView(splash)
+        window.statusBarColor = Color.WHITE
+        window.navigationBarColor = Color.WHITE
+        window.decorView.systemUiVisibility =
+            View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR or View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR
+        Handler(Looper.getMainLooper()).postDelayed({
+            if (!isFinishing && !isDestroyed) {
+                applyTheme()
+                showQuran()
+            }
+        }, 1500L)
     }
 
     override fun onStop() {
