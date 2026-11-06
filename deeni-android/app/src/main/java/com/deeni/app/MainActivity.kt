@@ -203,7 +203,13 @@ class MainActivity : Activity() {
     override fun onBackPressed() {
         if (currentPage != "home") {
             stopRecognition()
-            showHome()
+            // When the Mushaf was opened from the redesigned Deeni dashboard,
+            // return to that dashboard instead of exposing the legacy MainActivity home.
+            if (intent.getBooleanExtra("open_mushaf", false)) {
+                finish()
+            } else {
+                showHome()
+            }
         } else {
             super.onBackPressed()
         }
