@@ -43,6 +43,8 @@ class DeeniActivity : Activity(), SensorEventListener {
     private var qiblaBearing = 0f
     private val abuArishLatitude = 16.9689
     private val abuArishLongitude = 42.8325
+    private var currentLatitude = abuArishLatitude.toFloat()
+    private var currentLongitude = abuArishLongitude.toFloat()
 
     private val surahs = listOf(
         "الفاتحة","البقرة","آل عمران","النساء","المائدة","الأنعام","الأعراف","الأنفال","التوبة","يونس",
@@ -98,8 +100,8 @@ class DeeniActivity : Activity(), SensorEventListener {
         SensorManager.getOrientation(rotation, orientation)
         val magneticAzimuth = (Math.toDegrees(orientation[0].toDouble()).toFloat() + 360f) % 360f
         val field = GeomagneticField(
-            abuArishLatitude.toFloat(),
-            abuArishLongitude.toFloat(),
+            currentLatitude,
+            currentLongitude,
             0f,
             System.currentTimeMillis()
         )
@@ -574,24 +576,55 @@ class DeeniActivity : Activity(), SensorEventListener {
     }
 
     private fun showPrayer() {
-        screen("مواقيت الصلاة", "أبو عريش • مواقيت اليوم")
-        val output = label("جارٍ تحميل المواقيت…", 17f, accent(), true)
+        val city = prefs.getString("prayer_city", "Abu Arish") ?: "Abu Arish"
+        screen("مواقيت الصلاة", "اختر المدينة لعرض مواقيتها")
+        val cityInput = EditText(this).apply {
+            setText(city)
+            hint = "اسم المدينة"
+            singleLine = true
+            textSize = 16f
+            setTextColor(ink())
+            background = shape(panel())
+            setPadding(12, 10, 12, 10)
+        }
+        root?.addView(cityInput)
+        val output = label("جارٍ تحميل المواقيت…", 16f, accent(), true)
         root?.addView(output)
-        Thread {
-            val result = PrayerTimesSource.load("Abu Arish")
-            runOnUiThread {
-                if (result.isSuccess) {
-                    val data = result.getOrThrow()
-                    output.text = data.dateLabel + "\n\n" + data.times.joinToString("\n") { it.first + "     " + it.second }
-                } else output.text = "تعذر تحميل المواقيت. تحقق من الإنترنت."
-            }
-        }.start()
+        fun loadCity(cityName: String) {
+            output.text = "جارٍ تحميل مواقيت " + cityName + "…"
+            Thread {
+                val result = PrayerTimesSource.load(cityName)
+                runOnUiThread {
+                    if (result.isSuccess) {
+                        val data = result.getOrThrow()
+                        prefs.edit()
+                            .putString("prayer_city", cityName)
+                            .putFloat("prayer_lat", data.latitude.toFloat())
+                            .putFloat("prayer_lon", data.longitude.toFloat())
+                            .apply()
+                        output.text = data.dateLabel + "\n\n" + data.times.joinToString("\n") { it.first + "     " + it.second }
+                    } else {
+                        output.text = "تعذر تحميل المواقيت. تحقق من اسم المدينة والاتصال."
+                    }
+                }
+            }.start()
+        }
+        root?.addView(button("تحديث مواقيت المدينة", true) {
+            val requestedCity = cityInput.text.toString().trim()
+            if (requestedCity.isBlank()) {
+                Toast.makeText(this, "اكتب اسم المدينة أولًا.", Toast.LENGTH_SHORT).show()
+            } else loadCity(requestedCity)
+        })
         root?.addView(button("اتجاه القبلة", false) { showQibla() })
+        loadCity(city)
     }
 
     private fun showQibla() {
-        screen("القبلة", "بوصلة حية من أبو عريش إلى الكعبة")
-        qiblaBearing = QiblaMath.bearingDegrees(abuArishLatitude, abuArishLongitude).toFloat()
+        val city = prefs.getString("prayer_city", "أبو عريش") ?: "أبو عريش"
+        currentLatitude = prefs.getFloat("prayer_lat", abuArishLatitude.toFloat())
+        currentLongitude = prefs.getFloat("prayer_lon", abuArishLongitude.toFloat())
+        screen("القبلة", "بوصلة حية من " + city + " إلى الكعبة")
+        qiblaBearing = QiblaMath.bearingDegrees(currentLatitude.toDouble(), currentLongitude.toDouble()).toFloat()
         compassView = QiblaCompassView(this)
         compassView?.setDirection(qiblaBearing, 0f)
         root?.addView(compassView, LinearLayout.LayoutParams(280, 280).apply {
