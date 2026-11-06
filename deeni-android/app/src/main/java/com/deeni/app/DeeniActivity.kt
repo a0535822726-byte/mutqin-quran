@@ -940,9 +940,15 @@ class DeeniActivity : Activity(), SensorEventListener {
             }
             filtered.forEachIndexed { i, item ->
                 results.addView(button((i + 1).toString() + ". " + item.first + "\n" + item.second.take(135) + "…", false) {
+                    val favoriteKey = "story_fav_" + (if (companions) "companion_" else "prophet_") + item.first
+                    val isFavorite = prefs.getBoolean(favoriteKey, false)
                     AlertDialog.Builder(this)
                         .setTitle(item.first)
-                        .setMessage(item.second + "\n\nالمراجع المذكورة: " + item.third + "\n\nمعيار القراءة: ذكر كتاب تاريخ أو سيرة لا يعني وحده صحة كل خبر فيه. يُقدّم النص القرآني والحديث الصحيح، وتحتاج الأخبار التاريخية إلى فحص الرواية وإسنادها قبل الجزم بها.")
+                        .setMessage(item.second + "\n\nالمراجع المذكورة: " + item.third + "\n\nهذه صياغة تعليمية مختصرة وليست نقلًا حرفيًا من الكتب. ذكر كتاب تاريخ أو سيرة لا يعني وحده صحة كل خبر فيه؛ يُقدّم النص القرآني والحديث الصحيح، وتحتاج الأخبار التاريخية إلى فحص الرواية وإسنادها قبل الجزم بها.")
+                        .setNeutralButton(if (isFavorite) "إزالة من المفضلة" else "حفظ في المفضلة") { _, _ ->
+                            prefs.edit().putBoolean(favoriteKey, !isFavorite).apply()
+                            Toast.makeText(this, if (isFavorite) "أزيلت القصة من المفضلة." else "حُفظت القصة في المفضلة.", Toast.LENGTH_SHORT).show()
+                        }
                         .setPositiveButton("إغلاق", null)
                         .show()
                 })
