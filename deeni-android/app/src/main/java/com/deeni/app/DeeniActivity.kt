@@ -582,16 +582,53 @@ class DeeniActivity : Activity() {
             Triple("داود عليه السلام", "آتاه الله الملك والحكمة، وقتل جالوت بإذن الله، وأنزل عليه الزبور. وعلّمه الله صناعة الدروع، وسخّر معه الجبال والطير يسبحن. وكان نبيًا ملكًا يحكم بالحق، وفي قصته تذكير بالعدل وشكر النعمة.", "البقرة: 251؛ النساء: 163؛ الأنبياء: 78–80؛ سبأ: 10–11؛ ص: 17–26.")
         )
         screen(title, "قصص موثقة بالمراجع • " + items.size + " قصص في هذه المجموعة")
-        root?.addView(label("اختر قصة لقراءة التفاصيل والمرجع. هذه مجموعة أولية محددة العدد، وليست ادعاءً بوجود آلاف القصص.", 12f, muted()))
-        items.forEachIndexed { i, item ->
-            card((i + 1).toString() + ". " + item.first, item.second.take(115) + "…", "✧") {
-                AlertDialog.Builder(this)
-                    .setTitle(item.first)
-                    .setMessage(item.second + "\n\nالمراجع: " + item.third)
-                    .setPositiveButton("إغلاق", null)
-                    .show()
+        root?.addView(label("ابحث باسم الشخصية أو بكلمة من أحداث القصة. العدد الظاهر هو عدد القصص الموجودة فعلًا.", 12f, muted()))
+        val search = SearchView(this).apply {
+            queryHint = "ابحث في القصص…"
+            isIconifiedByDefault = false
+            setBackgroundColor(panel())
+            setQuery("", false)
+        }
+        root?.addView(search)
+        val results = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            layoutDirection = View.LAYOUT_DIRECTION_RTL
+        }
+        root?.addView(results)
+        fun renderStories(query: String) {
+            results.removeAllViews()
+            val filtered = items.filter { item ->
+                query.isBlank() || item.first.contains(query.trim(), ignoreCase = true) ||
+                    item.second.contains(query.trim(), ignoreCase = true) ||
+                    item.third.contains(query.trim(), ignoreCase = true)
+            }
+            if (filtered.isEmpty()) {
+                results.addView(label("لا توجد قصة تطابق عبارة البحث.", 14f, muted()))
+                return
+            }
+            filtered.forEachIndexed { i, item ->
+                results.addView(button((i + 1).toString() + ". " + item.first + "\\n" + item.second.take(135) + "…", false) {
+                    AlertDialog.Builder(this)
+                        .setTitle(item.first)
+                        .setMessage(item.second + "\\n\\nالمراجع: " + item.third)
+                        .setPositiveButton("إغلاق", null)
+                        .show()
+                })
+                results.addView(gap(8))
             }
         }
+        search.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
+            override fun onQueryTextSubmit(query: String?): Boolean {
+                renderStories(query.orEmpty())
+                search.clearFocus()
+                return true
+            }
+            override fun onQueryTextChange(newText: String?): Boolean {
+                renderStories(newText.orEmpty())
+                return true
+            }
+        })
+        renderStories("")
     }
 
     private fun showTajweed() {
