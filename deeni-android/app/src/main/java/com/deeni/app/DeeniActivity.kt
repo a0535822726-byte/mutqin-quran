@@ -259,7 +259,7 @@ class DeeniActivity : Activity(), SensorEventListener {
         tiles("الأنبياء", "18 قصة مع مراجع", { showStories(false) }, "الصحابة", "17 سيرة مع مراجع", { showStories(true) })
         tiles("التجويد", "50 درسًا قابلًا للبحث", { showTajweed() }, "الفقه", "12 بابًا قابلًا للبحث", { showFiqh() })
         heading("أدوات أخرى")
-        tiles("المسابقة", "20 سؤالًا مع تصحيح", { showQuiz() }, "الأسماء الحسنى", "10 أسماء ومعانٍ", { showNames() })
+        tiles("المسابقة", "20 سؤالًا مع شرح", { showQuiz() }, "الأسماء الحسنى", "30 اسمًا ومعنى", { showNames() })
         tiles("ملاحظاتي", "فوائدك الخاصة", { showNotes() }, "تقدمك", "متابعة الإنجاز", { showProgress() })
         root?.addView(button(if (light) "الوضع الفاتح • التبديل للداكن" else "الوضع الداكن • التبديل للفاتح", false) {
             light = !light; prefs.edit().putBoolean("light", light).apply(); showHome()
