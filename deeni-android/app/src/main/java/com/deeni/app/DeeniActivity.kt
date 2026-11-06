@@ -71,7 +71,11 @@ class DeeniActivity : Activity() {
     private fun ink() = if (light) Color.rgb(37,55,46) else Color.rgb(247,243,228)
     private fun muted() = if (light) Color.rgb(102,116,103) else Color.rgb(190,207,195)
     private fun accent() = if (light) Color.rgb(128,91,35) else gold
-    private fun shape(c: Int, r: Float = 20f) = GradientDrawable().apply { setColor(c); cornerRadius = r }
+    private fun shape(c: Int, r: Float = 20f) = GradientDrawable().apply {
+        setColor(c)
+        cornerRadius = r
+        setStroke(1, if (light) Color.rgb(222, 211, 190) else Color.rgb(43, 59, 87))
+    }
 
     private fun label(value: String, size: Float = 16f, color: Int = ink(), bold: Boolean = false) =
         TextView(this).apply {
@@ -144,6 +148,7 @@ class DeeniActivity : Activity() {
     private fun card(title: String, desc: String, icon: String, click: () -> Unit) {
         val view = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL; background = shape(panel())
+            elevation = 3f
             setPadding(15, 12, 15, 12)
             addView(label(icon, 21f, accent(), true))
             addView(label(title, 17f, ink(), true))
@@ -164,7 +169,7 @@ class DeeniActivity : Activity() {
         listOf(Triple(a, ad, ac), Triple(b, bd, bc)).forEach { item ->
             val v = LinearLayout(this).apply {
                 orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER
-                background = shape(panel()); setPadding(7, 14, 7, 14)
+                background = shape(panel()); elevation = 2f; setPadding(7, 14, 7, 14)
                 addView(label(item.first, 15f, accent(), true).apply { gravity = Gravity.CENTER })
                 addView(label(item.second, 11f, muted()).apply { gravity = Gravity.CENTER })
                 setOnClickListener { item.third() }
@@ -178,7 +183,12 @@ class DeeniActivity : Activity() {
     private fun showHome() {
         screen("الرئيسية", "منصة إسلامية للقرآن والعبادة والتعلّم")
         val hero = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL; background = shape(panel2(), 24f)
+            orientation = LinearLayout.VERTICAL
+            background = GradientDrawable(GradientDrawable.Orientation.TL_BR, if (light) intArrayOf(Color.rgb(255, 250, 235), Color.rgb(232, 222, 197)) else intArrayOf(Color.rgb(21, 38, 68), Color.rgb(8, 18, 38))).apply {
+                cornerRadius = 24f
+                setStroke(1, accent())
+            }
+            elevation = 5f
             setPadding(18, 18, 18, 18)
             addView(label("وَرَتِّلِ الْقُرْآنَ تَرْتِيلًا", 24f, accent(), true))
             addView(label("ابدأ من آخر موضع وصلت إليه، واجعل لك وردًا ثابتًا.", 13f))
