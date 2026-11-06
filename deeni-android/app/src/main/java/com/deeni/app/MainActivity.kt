@@ -98,7 +98,7 @@ class MainActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         window.decorView.systemUiVisibility = 0
-        lightTheme = getSharedPreferences("deeni", MODE_PRIVATE).getBoolean("light_theme", false)
+        lightTheme = getSharedPreferences("deeni", MODE_PRIVATE).getBoolean("light_theme", true)
         applyTheme()
         tasbeeh = getSharedPreferences("deeni", MODE_PRIVATE).getInt("tasbeeh", 0)
         selectedReader = getSharedPreferences("deeni", MODE_PRIVATE).getString("reader", readers[0]) ?: readers[0]
@@ -542,7 +542,7 @@ class MainActivity : Activity() {
         pageStatus = label("جارٍ تحميل صفحة المصحف…", 12f, muted)
         root.addView(pageStatus!!)
         mushafWebView = WebView(this).apply {
-            setBackgroundColor(Color.rgb(248, 243, 228))
+            setBackgroundColor(Color.rgb(255, 253, 248))
             settings.javaScriptEnabled = true
             settings.domStorageEnabled = false
             settings.allowFileAccess = false
@@ -579,9 +579,9 @@ class MainActivity : Activity() {
             }
         }
         val mushafFrame = FrameLayout(this).apply {
-            background = shape(Color.rgb(248, 243, 228), 12f)
+            background = shape(Color.rgb(255, 253, 248), 12f)
             setPadding(4, 4, 4, 4)
-            addView(mushafWebView!!, FrameLayout.LayoutParams(-1, 590))
+            addView(mushafWebView!!, FrameLayout.LayoutParams(-1, (resources.displayMetrics.heightPixels / resources.displayMetrics.density * 0.68f).toInt().coerceAtLeast(480)))
         }
         val floatingMic = button("🎙", true) { showMicOptions() }.apply {
             textSize = 25f
@@ -719,7 +719,7 @@ class MainActivity : Activity() {
             <head>
               <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=4">
               <style>
-                html,body{margin:0;padding:0;background:#f8f3e4}
+                html,body{margin:0;padding:0;background:#fffdf8}
                 #page{width:100%;margin:0 auto}
                 svg{display:block;width:100%;height:auto;max-width:100%}
                 .ayahPolygon{cursor:pointer;pointer-events:all}
