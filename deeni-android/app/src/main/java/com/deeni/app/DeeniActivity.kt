@@ -206,46 +206,12 @@ class DeeniActivity : Activity() {
     }
 
     private fun showQuran(startMic: Boolean = false) {
-        screen("المصحف", "نص القرآن الكامل مقسّم إلى صفحات المصحف الـ604")
-        val bar = LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER
-            layoutDirection = View.LAYOUT_DIRECTION_LTR
-        }
-        bar.addView(button("السابق", false) { loadPage(page - 1) }, LinearLayout.LayoutParams(0, -2, 1f))
-        bar.addView(button("صفحة " + page + " / 604", true) { askPage() }, LinearLayout.LayoutParams(0, -2, 1.3f))
-        bar.addView(button("التالي", false) { loadPage(page + 1) }, LinearLayout.LayoutParams(0, -2, 1f))
-        root?.addView(bar)
-        root?.addView(gap(7))
-        root?.addView(button("اختيار السورة", false) { chooseSurah() })
-        val status = label("جارٍ تحميل الصفحة كاملة…", 12f, muted())
-        root?.addView(status)
-        val mushaf = TextView(this).apply {
-            text = " "; textSize = 23f; setTextColor(Color.rgb(47,55,44))
-            gravity = Gravity.CENTER; textDirection = View.TEXT_DIRECTION_RTL
-            typeface = Typeface.create("serif", Typeface.NORMAL)
-            setLineSpacing(12f, 1.12f); background = shape(paper, 14f)
-            setPadding(18, 22, 18, 22); setTextIsSelectable(true)
-        }
-        root?.addView(mushaf)
-        root?.addView(gap(8))
-        root?.addView(button("حفظ موضع القراءة", false) {
-            prefs.edit().putInt("page", page).apply()
-            Toast.makeText(this, "تم حفظ موضع القراءة", Toast.LENGTH_SHORT).show()
+        // Reuse the full SVG Madinah Mushaf reader rather than displaying a plain-text substitute.
+        getSharedPreferences("deeni", MODE_PRIVATE).edit().putInt("mushaf_page", page).apply()
+        startActivity(Intent(this, MainActivity::class.java).apply {
+            putExtra("open_mushaf", true)
+            putExtra("start_mic", startMic)
         })
-        root?.addView(button("حفظ آية", false) { saveAyahDialog() })
-        val micButton = button("🎙 الميكروفون • اضغط للتسميع، واضغط مطولًا للأنماط", true) {
-            startMic(mushaf, "التسميع")
-        }
-        micButton.setOnLongClickListener {
-            showRecitationModes(mushaf)
-            true
-        }
-        root?.addView(micButton)
-        root?.addView(button("اختر قارئًا واستمع", false) { chooseReciter() })
-        root?.addView(button("التفسير", false) { showTafsir() })
-        root?.addView(label("لا يعرض التطبيق نصًا ناقصًا عند فشل التحميل؛ أعد المحاولة بعد التحقق من الإنترنت.", 11f, muted()))
-        loadPageText(page, mushaf, status)
-        if (startMic) root?.post { startMic(mushaf) }
     }
 
     private fun loadPage(requested: Int) {
