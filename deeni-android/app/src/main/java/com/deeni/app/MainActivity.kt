@@ -98,6 +98,16 @@ class MainActivity : Activity() {
             "القارعة", "التكاثر", "العصر", "الهمزة", "الفيل", "قريش", "الماعون", "الكوثر", "الكافرون", "النصر",
             "المسد", "الإخلاص", "الفلق", "الناس"
         )
+    private val juzStarts = listOf(
+        1 to (1 to 1), 2 to (2 to 142), 3 to (2 to 253), 4 to (3 to 93),
+        5 to (4 to 24), 6 to (4 to 148), 7 to (5 to 82), 8 to (6 to 111),
+        9 to (7 to 88), 10 to (8 to 41), 11 to (9 to 93), 12 to (11 to 6),
+        13 to (12 to 53), 14 to (15 to 1), 15 to (17 to 1), 16 to (18 to 75),
+        17 to (21 to 1), 18 to (23 to 1), 19 to (25 to 21), 20 to (27 to 56),
+        21 to (29 to 46), 22 to (33 to 31), 23 to (36 to 28), 24 to (39 to 32),
+        25 to (41 to 47), 26 to (46 to 1), 27 to (51 to 31), 28 to (58 to 1),
+        29 to (67 to 1), 30 to (78 to 1)
+    )
     private val fatiha = listOf(
         "بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ",
         "الْحَمْدُ لِلَّهِ رَبِّ الْعَالَمِينَ",
@@ -559,6 +569,8 @@ class MainActivity : Activity() {
         }
         indexActions.addView(button("فهرس السور", false) { showMushafSurahIndex() },
             LinearLayout.LayoutParams(0, -2, 1f))
+        indexActions.addView(button("فهرس الأجزاء", false) { showJuzIndex() },
+            LinearLayout.LayoutParams(0, -2, 1f))
         indexActions.addView(button("علاماتي", false) { showMushafBookmarks() },
             LinearLayout.LayoutParams(0, -2, 1f))
         root.addView(indexActions)
@@ -982,6 +994,33 @@ class MainActivity : Activity() {
                             loadMushafPage(page)
                         } else {
                             pageStatus?.text = "تعذر تحديد صفحة السورة. تحقق من الإنترنت وحاول مجددًا."
+                        }
+                    }
+                }.start()
+            }
+            .setNegativeButton("إغلاق", null)
+            .show()
+    }
+
+    private fun showJuzIndex() {
+        val labels = juzStarts.map { (juz, start) -> "الجزء $juz • سورة ${mushafSurahNames[start.first - 1]} • آية ${start.second}" }.toTypedArray()
+        android.app.AlertDialog.Builder(this)
+            .setTitle("فهرس أجزاء القرآن الكريم")
+            .setItems(labels) { dialog, which ->
+                dialog.dismiss()
+                val (juz, start) = juzStarts[which]
+                pageStatus?.text = "جارٍ فتح بداية الجزء $juz…"
+                Thread {
+                    val result = QuranPageSource.loadAyahDetails(start.first, start.second)
+                    runOnUiThread {
+                        if (currentPage != "quran") return@runOnUiThread
+                        if (result.isSuccess) {
+                            val (text, page) = result.getOrThrow()
+                            selectedAyah = start.first to start.second
+                            selectedAyahText = text
+                            loadMushafPage(page)
+                        } else {
+                            pageStatus?.text = "تعذر تحديد صفحة الجزء $juz. تحقق من الإنترنت وحاول مجددًا."
                         }
                     }
                 }.start()
