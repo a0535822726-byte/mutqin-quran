@@ -224,7 +224,7 @@ class DeeniActivity : Activity() {
             gravity = Gravity.CENTER; textDirection = View.TEXT_DIRECTION_RTL
             typeface = Typeface.create("serif", Typeface.NORMAL)
             setLineSpacing(12f, 1.12f); background = shape(paper, 14f)
-            setPadding(18, 22, 18, 22); textIsSelectable = true
+            setPadding(18, 22, 18, 22); isTextSelectable = true
         }
         root?.addView(mushaf)
         root?.addView(gap(8))
