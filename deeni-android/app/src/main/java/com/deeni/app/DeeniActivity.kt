@@ -764,15 +764,56 @@ class DeeniActivity : Activity() {
     }
 
     private fun showFiqh() {
-        screen("الفقه", "معلومات تمهيدية وليست فتاوى")
-        listOf(
-            "الطهارة" to "أحكام الوضوء والغسل والتيمم وإزالة النجاسة.",
-            "الصلاة" to "شروط الصلاة وأركانها وواجباتها وسننها.",
-            "الصيام" to "أحكام النية والإمساك والمفطرات والرخص.",
-            "الزكاة" to "شروط الوجوب والأنصبة ومصارف الزكاة.",
-            "المعاملات" to "التراضي والوضوح والعدل واجتناب الربا والغش."
-        ).forEach { card(it.first, it.second, "⚖") {} }
-        root?.addView(label("المسائل التفصيلية والفتاوى تُسأل فيها جهة علمية موثوقة.", 11f, muted()))
+        val topics = listOf(
+            "الطهارة" to "مدخل إلى أحكام المياه والنجاسات والوضوء والغسل والتيمم، مع التعرف على شروط الطهارة ومقاصدها.",
+            "الوضوء" to "دراسة صفة الوضوء وفرائضه وسننه ونواقضه والمسائل التي يكثر السؤال عنها، مع الرجوع إلى الدليل.",
+            "الغسل والتيمم" to "أسباب الغسل وصفته، ومتى يشرع التيمم وصفته وأحكامه العامة.",
+            "الصلاة" to "شروط الصلاة وأركانها وواجباتها وسننها، وأحكام الجماعة والجمعة والسهو.",
+            "صلاة المسافر والمريض" to "الرخص المتعلقة بالسفر والمرض، مثل القصر والجمع والصلاة بحسب الاستطاعة.",
+            "الزكاة" to "شروط وجوب الزكاة والأموال الزكوية والأنصبة والمصارف، وتفاصيل الحساب تحتاج إلى ضبط.",
+            "الصيام" to "النية والإمساك والمفطرات والرخص وأحكام القضاء والكفارة في مواضعها.",
+            "الحج والعمرة" to "الإحرام والمواقيت والطواف والسعي والوقوف بعرفة والهدي ومحظورات الإحرام.",
+            "الأطعمة والذبائح" to "الأصل في الأطعمة، وأحكام الذكاة، وما يحل وما يحرم وفق النصوص الشرعية.",
+            "المعاملات المالية" to "البيع والإجارة والديون والربا والغرر والغش والوفاء بالشروط.",
+            "الأسرة" to "موضوعات النكاح والحقوق الأسرية والطلاق والعدة والميراث، وهي أبواب تحتاج إلى سؤال أهل العلم.",
+            "الأيمان والنذور" to "معاني اليمين والنذر والكفارة وأحكام الوفاء، وتفاصيل كل واقعة تختلف باختلاف ألفاظها وظروفها."
+        )
+        screen("الفقه", "مداخل تعليمية • " + topics.size + " أبواب في هذه الدفعة")
+        root?.addView(label("اختر بابًا لعرض موضوعاته العامة. هذه ليست فتاوى ولا تكفي للحكم على واقعة شخصية.", 12f, muted()))
+        val search = SearchView(this).apply {
+            queryHint = "ابحث في أبواب الفقه…"
+            isIconifiedByDefault = false
+        }
+        root?.addView(search)
+        val results = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        root?.addView(results)
+        fun renderTopics(query: String) {
+            results.removeAllViews()
+            val found = topics.filter { it.first.contains(query.trim(), true) || it.second.contains(query.trim(), true) }
+            found.forEachIndexed { index, topic ->
+                results.addView(button((index + 1).toString() + ". " + topic.first, false) {
+                    AlertDialog.Builder(this)
+                        .setTitle(topic.first)
+                        .setMessage(topic.second + "\n\nتنبيه: قد تختلف بعض التفاصيل باختلاف المذهب والدليل والواقعة؛ راجع عالمًا موثوقًا أو مرجعًا فقهيًا معتمدًا.")
+                        .setPositiveButton("إغلاق", null)
+                        .show()
+                })
+                results.addView(gap(7))
+            }
+            if (found.isEmpty()) results.addView(label("لا توجد أبواب تطابق البحث.", 14f, muted()))
+        }
+        search.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
+            override fun onQueryTextSubmit(query: String?): Boolean {
+                renderTopics(query.orEmpty())
+                search.clearFocus()
+                return true
+            }
+            override fun onQueryTextChange(newText: String?): Boolean {
+                renderTopics(newText.orEmpty())
+                return true
+            }
+        })
+        renderTopics("")
     }
 
     private fun showQuiz() {
