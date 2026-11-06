@@ -573,34 +573,69 @@ class DeeniActivity : Activity(), SensorEventListener {
     }
 
     private fun showAdhkar() {
-        screen("الأذكار", "أذكار مختارة مع عداد تكرار")
         val items = listOf(
-            "سُبْحَانَ اللَّهِ وَبِحَمْدِهِ",
-            "أَسْتَغْفِرُ اللَّهَ وَأَتُوبُ إِلَيْهِ",
-            "لَا إِلَهَ إِلَّا اللَّهُ وَحْدَهُ لَا شَرِيكَ لَهُ",
-            "سُبْحَانَ اللَّهِ وَالْحَمْدُ لِلَّهِ وَلَا إِلَهَ إِلَّا اللَّهُ وَاللَّهُ أَكْبَرُ",
-            "اللَّهُمَّ صَلِّ وَسَلِّمْ عَلَى نَبِيِّنَا مُحَمَّدٍ",
-            "لَا حَوْلَ وَلَا قُوَّةَ إِلَّا بِاللَّهِ",
-            "رَبِّ اغْفِرْ لِي وَارْحَمْنِي",
-            "اللَّهُمَّ أَعِنِّي عَلَى ذِكْرِكَ وَشُكْرِكَ وَحُسْنِ عِبَادَتِكَ"
+            Triple("سُبْحَانَ اللَّهِ وَبِحَمْدِهِ", "صحيح البخاري وصحيح مسلم.", "ورد في فضل قولها مائة مرة في اليوم."),
+            Triple("أَسْتَغْفِرُ اللَّهَ وَأَتُوبُ إِلَيْهِ", "صحيح البخاري.", "كان النبي ﷺ يكثر من الاستغفار والتوبة في اليوم."),
+            Triple("لَا إِلَهَ إِلَّا اللَّهُ وَحْدَهُ لَا شَرِيكَ لَهُ، لَهُ الْمُلْكُ وَلَهُ الْحَمْدُ وَهُوَ عَلَى كُلِّ شَيْءٍ قَدِيرٌ", "صحيح البخاري وصحيح مسلم.", "ورد في فضل قولها مائة مرة في اليوم."),
+            Triple("سُبْحَانَ اللَّهِ وَالْحَمْدُ لِلَّهِ وَلَا إِلَهَ إِلَّا اللَّهُ وَاللَّهُ أَكْبَرُ", "صحيح مسلم، كتاب الذكر والدعاء.", "من الكلمات المحبوبة إلى الله، ويجوز ذكرها دون عدد محدد هنا."),
+            Triple("لَا حَوْلَ وَلَا قُوَّةَ إِلَّا بِاللَّهِ", "صحيح البخاري وصحيح مسلم.", "كنز من كنوز الجنة كما ورد في الحديث."),
+            Triple("اللَّهُمَّ أَعِنِّي عَلَى ذِكْرِكَ وَشُكْرِكَ وَحُسْنِ عِبَادَتِكَ", "سنن أبي داود والنسائي.", "وصية نبوية تقال في دبر الصلاة."),
+            Triple("بِسْمِ اللَّهِ الَّذِي لَا يَضُرُّ مَعَ اسْمِهِ شَيْءٌ فِي الْأَرْضِ وَلَا فِي السَّمَاءِ وَهُوَ السَّمِيعُ الْعَلِيمُ", "سنن أبي داود وجامع الترمذي.", "ورد قولها ثلاث مرات صباحًا وثلاثًا مساءً."),
+            Triple("رَضِيتُ بِاللَّهِ رَبًّا وَبِالْإِسْلَامِ دِينًا وَبِمُحَمَّدٍ ﷺ نَبِيًّا", "سنن أبي داود.", "ورد في أذكار الصباح والمساء، ويقال ثلاث مرات."),
+            Triple("اللَّهُمَّ بِكَ أَصْبَحْنَا وَبِكَ أَمْسَيْنَا وَبِكَ نَحْيَا وَبِكَ نَمُوتُ وَإِلَيْكَ النُّشُورُ", "جامع الترمذي وسنن أبي داود.", "يقال في الصباح، وعند المساء يقال: اللهم بك أمسينا وبك أصبحنا."),
+            Triple("اللَّهُمَّ أَنْتَ رَبِّي لَا إِلَهَ إِلَّا أَنْتَ، خَلَقْتَنِي وَأَنَا عَبْدُكَ، وَأَنَا عَلَى عَهْدِكَ وَوَعْدِكَ مَا اسْتَطَعْتُ، أَعُوذُ بِكَ مِنْ شَرِّ مَا صَنَعْتُ، أَبُوءُ لَكَ بِنِعْمَتِكَ عَلَيَّ، وَأَبُوءُ بِذَنْبِي فَاغْفِرْ لِي، فَإِنَّهُ لَا يَغْفِرُ الذُّنُوبَ إِلَّا أَنْتَ", "صحيح البخاري.", "هذا سيد الاستغفار، وله فضل عظيم إذا قاله العبد موقنًا به."),
+            Triple("سُبْحَانَ اللَّهِ وَبِحَمْدِهِ عَدَدَ خَلْقِهِ وَرِضَا نَفْسِهِ وَزِنَةَ عَرْشِهِ وَمِدَادَ كَلِمَاتِهِ", "صحيح مسلم.", "ذكر عظيم علّمه النبي ﷺ لجويرية رضي الله عنها."),
+            Triple("اللَّهُمَّ إِنِّي أَسْأَلُكَ الْعَفْوَ وَالْعَافِيَةَ فِي الدُّنْيَا وَالْآخِرَةِ", "سنن أبي داود وابن ماجه.", "دعاء جامع في سؤال العفو والعافية.")
         )
-        items.forEachIndexed { i, dhikr ->
-            var count = prefs.getInt("dhikr_" + i, 0)
-            val counter = label("التكرار: " + count, 14f, ink(), true)
-            root?.addView(label(dhikr, 20f, accent(), true))
-            root?.addView(counter)
-            root?.addView(button("تسبيحة +", true) {
-                count++; prefs.edit().putInt("dhikr_" + i, count).apply()
-                counter.text = "التكرار: " + count
-            })
-            root?.addView(button("تصفير هذا العداد", false) {
-                count = 0
-                prefs.edit().putInt("dhikr_" + i, 0).apply()
-                counter.text = "التكرار: 0"
-            })
-            root?.addView(gap(8))
+        screen("الأذكار", items.size.toString() + " أذكار مختارة مع المصادر والعداد")
+        root?.addView(label("ابحث عن الذكر أو مصدره. راجع عدد التكرار الوارد في المصدر، فالعداد هنا للتسجيل ولا يفرض عددًا على الذكر.", 12f, muted()))
+        val search = SearchView(this).apply {
+            queryHint = "ابحث في الأذكار…"
+            isIconifiedByDefault = false
         }
-        root?.addView(label("هذه أذكار مختارة وليست قائمة شاملة لأذكار الصباح والمساء؛ يلزم استكمالها من مصادر معتمدة.", 11f, muted()))
+        root?.addView(search)
+        val results = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        root?.addView(results)
+        fun renderAdhkar(query: String) {
+            results.removeAllViews()
+            val found = items.withIndex().filter { (_, item) ->
+                item.first.contains(query.trim(), true) ||
+                    item.second.contains(query.trim(), true) ||
+                    item.third.contains(query.trim(), true)
+            }
+            found.forEach { (index, item) ->
+                var count = prefs.getInt("dhikr_" + index, 0)
+                results.addView(label(item.first, 19f, accent(), true))
+                results.addView(label("المصدر: " + item.second, 11f, muted()))
+                results.addView(label(item.third, 12f, ink()))
+                val counter = label("التكرار المسجل: " + count, 14f, ink(), true)
+                results.addView(counter)
+                results.addView(button("تسجيل تكرار +", true) {
+                    count++
+                    prefs.edit().putInt("dhikr_" + index, count).apply()
+                    counter.text = "التكرار المسجل: " + count
+                })
+                results.addView(button("تصفير هذا العداد", false) {
+                    count = 0
+                    prefs.edit().putInt("dhikr_" + index, 0).apply()
+                    counter.text = "التكرار المسجل: 0"
+                })
+                results.addView(gap(12))
+            }
+            if (found.isEmpty()) results.addView(label("لا توجد أذكار تطابق البحث.", 14f, muted()))
+        }
+        search.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
+            override fun onQueryTextSubmit(query: String?): Boolean {
+                renderAdhkar(query.orEmpty())
+                search.clearFocus()
+                return true
+            }
+            override fun onQueryTextChange(newText: String?): Boolean {
+                renderAdhkar(newText.orEmpty())
+                return true
+            }
+        })
+        renderAdhkar("")
     }
 
     private fun showTasbeeh() {
