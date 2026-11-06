@@ -476,9 +476,11 @@ class DeeniActivity : Activity() {
         val tasks = (0..3).count { prefs.getBoolean("task_" + it, false) }
         val tajweedDone = prefs.getStringSet("tajweed_done", emptySet())?.size ?: 0
         val bestQuiz = prefs.getInt("best_quiz_score", 0)
+        val dhikrTotal = (0..7).sumOf { prefs.getInt("dhikr_" + it, 0) }
         card("الآيات المحفوظة", saved.toString() + " آية", "☆") { showSaved() }
         card("مهام اليوم", tasks.toString() + " من 4", "✓") { showMemorization() }
         card("دروس التجويد التي راجعتها", tajweedDone.toString() + " درسًا", "۞") { showTajweed() }
+        card("مجموع الأذكار المسجلة", dhikrTotal.toString() + " تكرار", "◉") { showAdhkar() }
         card("أفضل نتيجة في المسابقة", bestQuiz.toString() + " من 20", "★") { showQuiz() }
         card("آخر موضع", "صفحة " + page + " من 604", "۞") { showQuran() }
     }
