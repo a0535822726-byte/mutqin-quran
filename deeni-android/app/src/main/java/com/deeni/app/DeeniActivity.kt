@@ -517,6 +517,11 @@ class DeeniActivity : Activity() {
                 count++; prefs.edit().putInt("dhikr_" + i, count).apply()
                 counter.text = "التكرار: " + count
             })
+            root?.addView(button("تصفير هذا العداد", false) {
+                count = 0
+                prefs.edit().putInt("dhikr_" + i, 0).apply()
+                counter.text = "التكرار: 0"
+            })
             root?.addView(gap(8))
         }
         root?.addView(label("هذه أذكار مختارة وليست قائمة شاملة لأذكار الصباح والمساء؛ يلزم استكمالها من مصادر معتمدة.", 11f, muted()))
