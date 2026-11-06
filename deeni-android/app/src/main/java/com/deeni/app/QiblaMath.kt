@@ -16,7 +16,6 @@ internal object QiblaMath {
     fun bearing(latitude: Double, longitude: Double): Double {
         require(latitude.isFinite() && latitude in -90.0..90.0) { "Latitude must be between -90 and 90" }
         require(longitude.isFinite() && longitude in -180.0..180.0) { "Longitude must be between -180 and 180" }
-
         val kaabaLat = Math.toRadians(KAABA_LATITUDE)
         val kaabaLon = Math.toRadians(KAABA_LONGITUDE)
         val userLat = Math.toRadians(latitude)
@@ -25,6 +24,8 @@ internal object QiblaMath {
         val x = cos(userLat) * tan(kaabaLat) - sin(userLat) * cos(deltaLon)
         return (Math.toDegrees(atan2(y, x)) + 360.0) % 360.0
     }
+
+    fun bearingDegrees(latitude: Double, longitude: Double): Double = bearing(latitude, longitude)
 
     /** Smallest signed angle from device heading to Qibla, normalized to [-180, 180]. */
     fun relativeAngle(qiblaBearing: Float, deviceAzimuth: Float): Float {
