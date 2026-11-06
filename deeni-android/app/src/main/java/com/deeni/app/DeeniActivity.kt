@@ -171,15 +171,36 @@ class DeeniActivity : Activity(), SensorEventListener {
         scroll.addView(root)
         shell.addView(scroll, LinearLayout.LayoutParams(-1, 0, 1f))
         val nav = LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL; layoutDirection = View.LAYOUT_DIRECTION_RTL
-            gravity = Gravity.CENTER; setPadding(6, 8, 6, 8); background = shape(panel(), 18f)
+            orientation = LinearLayout.HORIZONTAL
+            layoutDirection = View.LAYOUT_DIRECTION_RTL
+            gravity = Gravity.CENTER
+            setPadding(7, 7, 7, 7)
+            background = shape(panel(), 22f)
+            elevation = 8f
         }
-        val destinations = listOf("الرئيسية", "المصحف", "الحفظ", "التقدم", "المزيد")
-        destinations.forEach { destination ->
-            val item = TextView(this).apply {
-                text = destination; textSize = 11f; gravity = Gravity.CENTER
-                setTextColor(if (destination == title) accent() else muted())
-                setPadding(3, 10, 3, 10)
+        val destinations = listOf(
+            Triple("الرئيسية", "⌂", "الرئيسية"),
+            Triple("المصحف", "▤", "المصحف"),
+            Triple("الحفظ", "◉", "الحفظ"),
+            Triple("التقدم", "◷", "التقدم"),
+            Triple("المزيد", "•••", "المزيد")
+        )
+        destinations.forEach { itemData ->
+            val destination = itemData.first
+            val active = destination == title
+            val item = LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
+                gravity = Gravity.CENTER
+                setPadding(3, 7, 3, 7)
+                if (active) background = shape(panel2(), 15f)
+                isClickable = true
+                isFocusable = true
+                addView(label(itemData.second, 18f, if (active) accent() else muted(), active).apply {
+                    gravity = Gravity.CENTER
+                })
+                addView(label(destination, 10f, if (active) accent() else muted(), active).apply {
+                    gravity = Gravity.CENTER
+                })
                 setOnClickListener {
                     when (destination) {
                         "الرئيسية" -> showHome()
@@ -193,7 +214,9 @@ class DeeniActivity : Activity(), SensorEventListener {
             nav.addView(item, LinearLayout.LayoutParams(0, -2, 1f))
         }
         val footer = LinearLayout(this).apply {
-            setPadding(12, 4, 12, 10); setBackgroundColor(bg()); addView(nav)
+            setPadding(12, 4, 12, 10)
+            setBackgroundColor(bg())
+            addView(nav)
         }
         shell.addView(footer)
         setContentView(shell)
