@@ -672,7 +672,7 @@ class DeeniActivity : Activity(), SensorEventListener {
             found.forEachIndexed { index, item ->
                 results.addView(cardView(
                     "حديث " + (index + 1),
-                    "«" + item.first + "»\\nالمصدر: " + item.second + "\\nالشرح الموجز: " + item.third
+                    "«" + item.first + "»\nالمصدر: " + item.second + "\nالشرح الموجز: " + item.third
                 ))
             }
             if (found.isEmpty()) results.addView(label("لا توجد أحاديث تطابق البحث.", 14f, muted()))
