@@ -693,13 +693,6 @@ class DeeniActivity : Activity(), SensorEventListener {
             }
             if (found.isEmpty()) results.addView(label("لا توجد أذكار تطابق البحث.", 14f, muted()))
         }
-        lateinit var favoritesToggle: TextView
-        favoritesToggle = button("عرض القصص المحفوظة فقط", false) {
-            favoritesOnly = !favoritesOnly
-            favoritesToggle.text = if (favoritesOnly) "عرض جميع القصص" else "عرض القصص المحفوظة فقط"
-            renderStories(search.query?.toString().orEmpty())
-        }
-        root?.addView(favoritesToggle)
         search.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
             override fun onQueryTextSubmit(query: String?): Boolean {
                 renderAdhkar(query.orEmpty())
@@ -965,6 +958,13 @@ class DeeniActivity : Activity(), SensorEventListener {
                 results.addView(gap(8))
             }
         }
+        lateinit var favoritesToggle: TextView
+        favoritesToggle = button("عرض القصص المحفوظة فقط", false) {
+            favoritesOnly = !favoritesOnly
+            favoritesToggle.text = if (favoritesOnly) "عرض جميع القصص" else "عرض القصص المحفوظة فقط"
+            renderStories(search.query?.toString().orEmpty())
+        }
+        root?.addView(favoritesToggle)
         search.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
             override fun onQueryTextSubmit(query: String?): Boolean {
                 renderStories(query.orEmpty())
