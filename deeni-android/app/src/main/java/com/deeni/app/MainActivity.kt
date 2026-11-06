@@ -129,7 +129,7 @@ class MainActivity : Activity() {
         showSplash()
     }
 
-    /** White opening screen, then enter directly into the saved Madinah Mushaf page. */
+    /** White opening screen, then enter the Deeni dashboard with the full Mushaf one tap away. */
     private fun showSplash() {
         val splash = FrameLayout(this).apply {
             setBackgroundColor(Color.WHITE)
@@ -166,7 +166,7 @@ class MainActivity : Activity() {
         Handler(Looper.getMainLooper()).postDelayed({
             if (!isFinishing && !isDestroyed) {
                 applyTheme()
-                showQuran()
+                showHome()
             }
         }, 1500L)
     }
