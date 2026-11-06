@@ -233,7 +233,14 @@ class DeeniActivity : Activity() {
             Toast.makeText(this, "تم حفظ موضع القراءة", Toast.LENGTH_SHORT).show()
         })
         root?.addView(button("حفظ آية", false) { saveAyahDialog() })
-        root?.addView(button("ابدأ التسميع", true) { startMic(mushaf) })
+        val micButton = button("🎙 الميكروفون • اضغط للتسميع، واضغط مطولًا للأنماط", true) {
+            startMic(mushaf, "التسميع")
+        }
+        micButton.setOnLongClickListener {
+            showRecitationModes(mushaf)
+            true
+        }
+        root?.addView(micButton)
         root?.addView(button("اختر قارئًا واستمع", false) { chooseReciter() })
         root?.addView(button("التفسير", false) { showTafsir() })
         root?.addView(label("لا يعرض التطبيق نصًا ناقصًا عند فشل التحميل؛ أعد المحاولة بعد التحقق من الإنترنت.", 11f, muted()))
@@ -304,7 +311,25 @@ class DeeniActivity : Activity() {
             }.setNegativeButton("إلغاء", null).show()
     }
 
-    private fun startMic(output: TextView) {
+    private fun showRecitationModes(output: TextView) {
+        val modes = arrayOf("التسميع من الحفظ", "استمع للقارئ", "اختبار الحفظ")
+        AlertDialog.Builder(this)
+            .setTitle("اختر وضع الميكروفون")
+            .setItems(modes) { _, which ->
+                when (which) {
+                    0 -> startMic(output, "التسميع من الحفظ")
+                    1 -> chooseReciter()
+                    2 -> {
+                        output.text = "اختبار الحفظ: اقرأ المقطع الذي حفظته دون النظر. سيعرض الهاتف تفريغًا صوتيًا تقريبيًا لتراجعه بنفسك؛ لا يصدر حكمًا آليًا على صحة الحفظ أو التجويد."
+                        startMic(output, "اختبار الحفظ")
+                    }
+                }
+            }
+            .setNegativeButton("إلغاء", null)
+            .show()
+    }
+
+    private fun startMic(output: TextView, mode: String = "التسميع") {
         if (!SpeechRecognizer.isRecognitionAvailable(this)) {
             Toast.makeText(this, "التعرف الصوتي غير متاح على الجهاز.", Toast.LENGTH_LONG).show(); return
         }
@@ -319,7 +344,7 @@ class DeeniActivity : Activity() {
             putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
         }
         recognizer?.setRecognitionListener(object : RecognitionListener {
-            override fun onReadyForSpeech(params: Bundle?) { output.text = "🎙 أستمع إليك… اقرأ بوضوح." }
+            override fun onReadyForSpeech(params: Bundle?) { output.text = "🎙 وضع $mode • أستمع إليك… اقرأ بوضوح." }
             override fun onBeginningOfSpeech() {}
             override fun onRmsChanged(rmsdB: Float) {}
             override fun onBufferReceived(buffer: ByteArray?) {}
