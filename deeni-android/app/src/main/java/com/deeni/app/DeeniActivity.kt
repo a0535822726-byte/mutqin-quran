@@ -257,7 +257,7 @@ class DeeniActivity : Activity(), SensorEventListener {
         heading("المكتبة الإسلامية")
         tiles("السيرة", "9 محطات مع مراجع", { showSirah() }, "الحديث", "28 حديثًا مع الشرح والمصدر", { showHadith() })
         tiles("الأنبياء", "18 قصة مع مراجع", { showStories(false) }, "الصحابة", "17 سيرة مع مراجع", { showStories(true) })
-        tiles("التجويد", "50 درسًا قابلًا للبحث", { showTajweed() }, "الفقه", "12 بابًا قابلًا للبحث", { showFiqh() })
+        tiles("التجويد", "60 درسًا قابلًا للبحث", { showTajweed() }, "الفقه", "12 بابًا قابلًا للبحث", { showFiqh() })
         heading("أدوات أخرى")
         tiles("المسابقة", "20 سؤالًا مع شرح", { showQuiz() }, "الأسماء الحسنى", "30 اسمًا ومعنى", { showNames() })
         tiles("ملاحظاتي", "فوائدك الخاصة", { showNotes() }, "تقدمك", "متابعة الإنجاز", { showProgress() })
@@ -555,7 +555,7 @@ class DeeniActivity : Activity(), SensorEventListener {
         val tasbeehCount = prefs.getInt("tasbeeh", 0)
         card("الآيات المحفوظة", saved.toString() + " آية", "☆") { showSaved() }
         card("مهام اليوم", tasks.toString() + " من 4", "✓") { showMemorization() }
-        card("دروس التجويد التي راجعتها", tajweedDone.toString() + " من 50 درسًا", "۞") { showTajweed() }
+        card("دروس التجويد التي راجعتها", tajweedDone.toString() + " من 60 درسًا", "۞") { showTajweed() }
         card("مجموع الأذكار المسجلة", dhikrTotal.toString() + " تكرار", "◉") { showAdhkar() }
         card("عداد التسبيح المستقل", tasbeehCount.toString() + " تكرار", "◉") { showTasbeeh() }
         card("أفضل نتيجة في المسابقة", bestQuiz.toString() + " من 20", "★") { showQuiz() }
@@ -1235,7 +1235,7 @@ class DeeniActivity : Activity(), SensorEventListener {
         card("قصص الصحابة", "17 سيرة مع مراجع", "☼") { showStories(true) }
         card("الأذكار", "12 ذكرًا مع مصادر وعدّادات محفوظة", "◉") { showAdhkar() }
         card("التسبيح", "عداد مستقل محفوظ", "◉") { showTasbeeh() }
-        card("التجويد", "50 درسًا قابلًا للبحث", "۞") { showTajweed() }
+        card("التجويد", "60 درسًا قابلًا للبحث", "۞") { showTajweed() }
         card("الفقه", "12 بابًا تعليميًا", "⚖") { showFiqh() }
         card("الأسماء الحسنى", "30 اسمًا ومعنى", "✧") { showNames() }
         card("المسابقة", "20 سؤالًا مع شرح الإجابة", "★") { showQuiz() }
