@@ -564,12 +564,37 @@ class MainActivity : Activity() {
                 }
             }
         }
-        val mushafFrame = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
+        var swipeStartX = 0f
+        mushafWebView!!.setOnTouchListener { _, event ->
+            when (event.action) {
+                android.view.MotionEvent.ACTION_DOWN -> { swipeStartX = event.x; false }
+                android.view.MotionEvent.ACTION_UP -> {
+                    val delta = event.x - swipeStartX
+                    if (kotlin.math.abs(delta) > 90f) {
+                        if (delta < 0) loadMushafPage(mushafPage + 1) else loadMushafPage(mushafPage - 1)
+                        true
+                    } else false
+                }
+                else -> false
+            }
+        }
+        val mushafFrame = FrameLayout(this).apply {
             background = shape(Color.rgb(248, 243, 228), 12f)
             setPadding(4, 4, 4, 4)
-            addView(mushafWebView!!, LinearLayout.LayoutParams(-1, 590))
+            addView(mushafWebView!!, FrameLayout.LayoutParams(-1, 590))
         }
+        val floatingMic = button("🎙", true) { showMicOptions() }.apply {
+            textSize = 25f
+            minWidth = 68
+            minHeight = 68
+            elevation = 12f
+            setOnLongClickListener { showMicOptions(); true }
+            contentDescription = "اضغط مطولًا للتسميع أو الاستماع أو اختبار التلاوة"
+        }
+        val micParams = FrameLayout.LayoutParams(68, 68, Gravity.BOTTOM or Gravity.END).apply {
+            setMargins(0, 0, 14, 14)
+        }
+        mushafFrame.addView(floatingMic, micParams)
         root.addView(mushafFrame)
         root.addView(label("اضغط على الآية لتحديدها وبدء التسميع عليها.", 12f, muted))
         ayahStatus = label("اختر آية من المصحف", 18f, cream, true)
@@ -578,19 +603,6 @@ class MainActivity : Activity() {
         root.addView(ayahStatus!!)
 
         root.addView(space(8))
-        val micMenuButton = button("🎙\nاضغط مطولًا للخيارات", true) {
-            showMicOptions()
-        }.apply {
-            textSize = 18f
-            minHeight = 76
-            setOnLongClickListener {
-                showMicOptions()
-                true
-            }
-            contentDescription = "خيارات الميكروفون: تسميع أو استماع للقارئ أو اختبار"
-        }
-        root.addView(micMenuButton)
-
         root.addView(space(6))
         val utilityActions = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
