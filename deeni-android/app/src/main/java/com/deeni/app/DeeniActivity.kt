@@ -256,7 +256,7 @@ class DeeniActivity : Activity(), SensorEventListener {
         tiles("الأذكار", "12 ذكرًا مع مصادر", { showAdhkar() }, "التسبيح", "عداد محفوظ", { showTasbeeh() })
         heading("المكتبة الإسلامية")
         tiles("السيرة", "9 محطات مع مراجع", { showSirah() }, "الحديث", "28 حديثًا مع الشرح والمصدر", { showHadith() })
-        tiles("الأنبياء", "18 قصة مع مراجع", { showStories(false) }, "الصحابة", "17 سيرة مع مراجع", { showStories(true) })
+        tiles("الأنبياء", "24 قصة مع مراجع", { showStories(false) }, "الصحابة", "25 سيرة مع مراجع", { showStories(true) })
         tiles("التجويد", "60 درسًا قابلًا للبحث", { showTajweed() }, "الفقه", "12 بابًا قابلًا للبحث", { showFiqh() })
         heading("أدوات أخرى")
         tiles("المسابقة", "20 سؤالًا مع شرح", { showQuiz() }, "الأسماء الحسنى", "30 اسمًا ومعنى", { showNames() })
@@ -1256,8 +1256,8 @@ class DeeniActivity : Activity(), SensorEventListener {
         screen("المزيد", "أقسام المنصة")
         card("السيرة النبوية", "9 محطات مع مراجع", "📜") { showSirah() }
         card("الأحاديث النبوية", "28 حديثًا مع الشرح والمصدر", "📖") { showHadith() }
-        card("قصص الأنبياء", "18 قصة مع مراجع", "✧") { showStories(false) }
-        card("قصص الصحابة", "17 سيرة مع مراجع", "☼") { showStories(true) }
+        card("قصص الأنبياء", "24 قصة مع مراجع", "✧") { showStories(false) }
+        card("قصص الصحابة", "25 سيرة مع مراجع", "☼") { showStories(true) }
         card("الأذكار", "12 ذكرًا مع مصادر وعدّادات محفوظة", "◉") { showAdhkar() }
         card("التسبيح", "عداد مستقل محفوظ", "◉") { showTasbeeh() }
         card("التجويد", "60 درسًا قابلًا للبحث", "۞") { showTajweed() }
