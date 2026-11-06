@@ -794,7 +794,18 @@ class DeeniActivity : Activity() {
         root?.addView(status); root?.addView(prompt); root?.addView(options)
         fun render() {
             options.removeAllViews()
-            if (index >= qs.size) { prompt.text = "انتهت المسابقة. نتيجتك: " + score + " من " + qs.size; return }
+            if (index >= qs.size) {
+                val best = maxOf(prefs.getInt("best_quiz_score", 0), score)
+                prefs.edit().putInt("best_quiz_score", best).apply()
+                prompt.text = "انتهت المسابقة. نتيجتك: " + score + " من " + qs.size + "\\nأفضل نتيجة محفوظة: " + best
+                options.addView(button("إعادة المسابقة", true) {
+                    index = 0
+                    score = 0
+                    status.text = "النقاط: 0"
+                    render()
+                })
+                return
+            }
             val q = qs[index]
             prompt.text = "السؤال " + (index + 1) + ": " + q.first
             q.second.forEachIndexed { i, answer ->
