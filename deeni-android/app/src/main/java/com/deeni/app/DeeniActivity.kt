@@ -20,11 +20,11 @@ import android.widget.*
 
 /** Redesigned Deeni entry point. The reader loads complete validated Quran pages, not a Fatiha-only sample. */
 class DeeniActivity : Activity() {
-    private val dark = Color.rgb(8, 31, 27)
-    private val green = Color.rgb(17, 51, 43)
-    private val green2 = Color.rgb(27, 69, 57)
-    private val gold = Color.rgb(218, 184, 112)
-    private val paper = Color.rgb(250, 246, 233)
+    private val dark = Color.rgb(3, 7, 18)
+    private val green = Color.rgb(17, 28, 53)
+    private val green2 = Color.rgb(11, 19, 41)
+    private val gold = Color.rgb(245, 158, 11)
+    private val paper = Color.rgb(249, 250, 251)
     private val prefs by lazy { getSharedPreferences("deeni_redesign", MODE_PRIVATE) }
     private var light = false
     private var page = 1
