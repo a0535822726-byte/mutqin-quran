@@ -5,6 +5,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class QuranWordGeometryTest {
+    // JSONObject parses this raw Kotlin string, so quotes must not be backslash-escaped.
     private val pageOneSample = """
         {
           "page": 1,
@@ -42,7 +43,8 @@ class QuranWordGeometryTest {
     @Test fun scalesCoordinatesWithoutChangingAspectRatio() {
         val box = QuranWordBox(1, 1, 1, 450, 718, 90, 68)
         val scaled = box.scaleTo(600, 1600)
-        assertEquals(600f / 900f, scaled.width / 90f, 0.0001f)
+        assertEquals(60f, scaled.width, 0.001f)
+        assertEquals(68f * (600f / 900f), scaled.height, 0.001f)
         assertTrue(scaled.x >= 0f)
         assertTrue(scaled.y >= 0f)
     }
