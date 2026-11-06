@@ -8,6 +8,11 @@ import android.content.pm.PackageManager
 import android.graphics.Color
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
+import android.hardware.GeomagneticField
+import android.hardware.Sensor
+import android.hardware.SensorEvent
+import android.hardware.SensorEventListener
+import android.hardware.SensorManager
 import android.media.AudioAttributes
 import android.media.MediaPlayer
 import android.os.Bundle
@@ -19,7 +24,7 @@ import android.view.View
 import android.widget.*
 
 /** Redesigned Deeni entry point. The reader loads complete validated Quran pages, not a Fatiha-only sample. */
-class DeeniActivity : Activity() {
+class DeeniActivity : Activity(), SensorEventListener {
     private val dark = Color.rgb(3, 7, 18)
     private val green = Color.rgb(17, 28, 53)
     private val green2 = Color.rgb(11, 19, 41)
@@ -33,6 +38,11 @@ class DeeniActivity : Activity() {
     private var player: MediaPlayer? = null
     private var recognizer: SpeechRecognizer? = null
     private var currentRead: ReciterRead? = null
+    private val sensorManager by lazy { getSystemService(SENSOR_SERVICE) as SensorManager }
+    private var compassView: QiblaCompassView? = null
+    private var qiblaBearing = 0f
+    private val abuArishLatitude = 16.9689
+    private val abuArishLongitude = 42.8325
 
     private val surahs = listOf(
         "الفاتحة","البقرة","آل عمران","النساء","المائدة","الأنعام","الأعراف","الأنفال","التوبة","يونس",
@@ -55,11 +65,49 @@ class DeeniActivity : Activity() {
         showHome()
     }
 
+    override fun onResume() {
+        super.onResume()
+        if (currentScreen == "القبلة") startCompassSensor()
+    }
+
+    override fun onPause() {
+        stopCompassSensor()
+        super.onPause()
+    }
+
     override fun onStop() {
         stopMic()
         stopAudio()
         super.onStop()
     }
+
+    private fun startCompassSensor() {
+        val sensor = sensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR)
+        if (sensor != null) sensorManager.registerListener(this, sensor, SensorManager.SENSOR_DELAY_UI)
+    }
+
+    private fun stopCompassSensor() {
+        sensorManager.unregisterListener(this)
+    }
+
+    override fun onSensorChanged(event: SensorEvent?) {
+        if (event?.sensor?.type != Sensor.TYPE_ROTATION_VECTOR) return
+        val rotation = FloatArray(9)
+        val orientation = FloatArray(3)
+        SensorManager.getRotationMatrixFromVector(rotation, event.values)
+        SensorManager.getOrientation(rotation, orientation)
+        val magneticAzimuth = (Math.toDegrees(orientation[0].toDouble()).toFloat() + 360f) % 360f
+        val field = GeomagneticField(
+            abuArishLatitude.toFloat(),
+            abuArishLongitude.toFloat(),
+            0f,
+            System.currentTimeMillis()
+        )
+        val trueAzimuth = (magneticAzimuth + field.declination + 360f) % 360f
+        compassView?.setDirection(qiblaBearing, trueAzimuth)
+    }
+
+    override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {}
 
     override fun onBackPressed() {
         if (currentScreen != "الرئيسية") showHome() else super.onBackPressed()
@@ -502,10 +550,21 @@ class DeeniActivity : Activity() {
     }
 
     private fun showQibla() {
-        screen("القبلة", "اتجاه تقريبي من أبو عريش إلى الكعبة")
-        val bearing = QiblaMath.bearingDegrees(16.9689, 42.8325)
-        root?.addView(label("اتجاه القبلة: " + bearing.toInt() + "° من الشمال الحقيقي تقريبًا.", 21f, accent(), true))
-        root?.addView(label("هذه نتيجة حساب جغرافي وليست قراءة بوصلة حية؛ قد تتأثر بوصلة الهاتف بالمجال المغناطيسي.", 13f, muted()))
+        screen("القبلة", "بوصلة حية من أبو عريش إلى الكعبة")
+        qiblaBearing = QiblaMath.bearingDegrees(abuArishLatitude, abuArishLongitude).toFloat()
+        compassView = QiblaCompassView(this)
+        root?.addView(compassView, LinearLayout.LayoutParams(280, 280).apply {
+            gravity = Gravity.CENTER
+        })
+        root?.addView(label("اتجاه القبلة: " + qiblaBearing.toInt() + "° من الشمال الحقيقي تقريبًا.", 18f, accent(), true))
+        val sensorAvailable = sensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR) != null
+        root?.addView(label(
+            if (sensorAvailable) "حرّك الهاتف ببطء بشكل أفقي. إذا لم يستقر الاتجاه، عاير البوصلة بعيدًا عن المعادن والأجهزة المغناطيسية."
+            else "مستشعر البوصلة غير متاح في هذا الجهاز؛ يظهر اتجاه القبلة الحسابي فقط.",
+            12f,
+            muted()
+        ))
+        if (sensorAvailable) startCompassSensor()
     }
 
     private fun showAdhkar() {
