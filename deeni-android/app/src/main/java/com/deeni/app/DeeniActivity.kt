@@ -522,7 +522,17 @@ class DeeniActivity : Activity(), SensorEventListener {
         } }
     }
 
+    private fun resetDailyTasksIfNeeded() {
+        val today = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US).format(java.util.Date())
+        if (prefs.getString("task_date", "") != today) {
+            val editor = prefs.edit().putString("task_date", today)
+            for (i in 0..3) editor.putBoolean("task_" + i, false)
+            editor.apply()
+        }
+    }
+
     private fun showMemorization() {
+        resetDailyTasksIfNeeded()
         screen("الحفظ والمراجعة", "خطة يومية تحفظ إنجازك على الجهاز")
         listOf("حفظ جديد", "مراجعة محفوظ الأمس", "تسميع دون نظر", "الاستماع ثم الترديد").forEachIndexed { i, item ->
             val check = CheckBox(this).apply {
@@ -535,6 +545,7 @@ class DeeniActivity : Activity(), SensorEventListener {
     }
 
     private fun showProgress() {
+        resetDailyTasksIfNeeded()
         screen("التقدم", "ملخص القراءة والحفظ")
         val saved = prefs.getStringSet("saved_ayahs", emptySet())?.size ?: 0
         val tasks = (0..3).count { prefs.getBoolean("task_" + it, false) }
