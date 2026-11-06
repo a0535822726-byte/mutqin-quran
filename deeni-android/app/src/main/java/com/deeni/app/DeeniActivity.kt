@@ -693,11 +693,10 @@ class DeeniActivity : Activity(), SensorEventListener {
             }
             if (found.isEmpty()) results.addView(label("لا توجد أذكار تطابق البحث.", 14f, muted()))
         }
-        val favoritesToggle = button("عرض القصص المحفوظة فقط", false) {
+        lateinit var favoritesToggle: TextView
+        favoritesToggle = button("عرض القصص المحفوظة فقط", false) {
             favoritesOnly = !favoritesOnly
-            it.let { view ->
-                (view as? TextView)?.text = if (favoritesOnly) "عرض جميع القصص" else "عرض القصص المحفوظة فقط"
-            }
+            favoritesToggle.text = if (favoritesOnly) "عرض جميع القصص" else "عرض القصص المحفوظة فقط"
             renderStories(search.query?.toString().orEmpty())
         }
         root?.addView(favoritesToggle)
