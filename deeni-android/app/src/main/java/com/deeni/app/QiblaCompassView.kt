@@ -47,7 +47,7 @@ class QiblaCompassView(context: Context) : View(context) {
         paint.color = cream
         paint.textSize = 30f
         paint.textAlign = Paint.Align.CENTER
-        canvas.drawText("N", cx, cy - radius - 18f, paint)
+        canvas.drawText("ش", cx, cy - radius - 18f, paint)
         canvas.save()
         canvas.rotate(relativeAngle, cx, cy)
         paint.color = gold
