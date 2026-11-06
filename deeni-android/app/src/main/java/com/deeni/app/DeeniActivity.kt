@@ -714,7 +714,9 @@ class DeeniActivity : Activity() {
             Triple("الإدغام المتجانسين والمتقاربين","المتجانسان يتحدان مخرجًا ويختلفان صفة، والمتقاربان تقارب مخرجيهما أو صفتيهما؛ ولكل منهما مواضع وأحكام.","تدريب: ادرس أمثلة قد تبينها كتب التجويد مثل قُل رَّبِّ، مع سماع الأداء المتقن."),
             Triple("آداب التلاوة","من آدابها الإخلاص والتدبر والطهارة عند مس المصحف واحترام القرآن وتحسين الصوت دون تكلف أو إخلال بالحروف.","تطبيق: اقرأ وردًا يسيرًا بتأنٍ، وافهم معنى ما تقرأ، وداوم على المراجعة.")
         )
+        val completedLessons = prefs.getStringSet("tajweed_done", emptySet())?.toMutableSet() ?: mutableSetOf()
         screen("التجويد", "منهج تأسيسي • " + lessons.size + " درسًا في هذه الدفعة")
+        root?.addView(label("أتممت مراجعة " + completedLessons.size + " من " + lessons.size + " درسًا في هذه الدفعة.", 14f, accent(), true))
         root?.addView(label("كل درس يتضمن تعريفًا وتطبيقًا وموضعًا أو مثالًا. ضبط الأداء يكون بالتلقي من معلم متقن.", 12f, muted()))
         val search = SearchView(this).apply { queryHint = "ابحث عن حكم أو درس…"; isIconifiedByDefault = false }
         root?.addView(search)
@@ -724,8 +726,18 @@ class DeeniActivity : Activity() {
             results.removeAllViews()
             val found = lessons.filter { it.first.contains(q, true) || it.second.contains(q, true) || it.third.contains(q, true) }
             found.forEachIndexed { n, lesson ->
-                results.addView(button("الدرس " + (n + 1) + ": " + lesson.first, false) {
-                    AlertDialog.Builder(this).setTitle(lesson.first).setMessage(lesson.second + "\n\n" + lesson.third).setPositiveButton("إغلاق", null).show()
+                val isDone = completedLessons.contains(lesson.first)
+                results.addView(button((if (isDone) "✓ " else "") + "الدرس " + (n + 1) + ": " + lesson.first, false) {
+                    AlertDialog.Builder(this)
+                        .setTitle(lesson.first)
+                        .setMessage(lesson.second + "\n\n" + lesson.third)
+                        .setPositiveButton(if (completedLessons.contains(lesson.first)) "إلغاء علامة المراجعة" else "تمت المراجعة") { _, _ ->
+                            if (completedLessons.contains(lesson.first)) completedLessons.remove(lesson.first) else completedLessons.add(lesson.first)
+                            prefs.edit().putStringSet("tajweed_done", completedLessons).apply()
+                            showTajweed()
+                        }
+                        .setNegativeButton("إغلاق", null)
+                        .show()
                 })
                 results.addView(gap(7))
             }
