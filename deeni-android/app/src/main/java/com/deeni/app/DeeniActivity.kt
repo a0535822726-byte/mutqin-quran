@@ -496,8 +496,8 @@ class DeeniActivity : Activity(), SensorEventListener {
     }
 
     private fun showSaved() {
-        screen("المحفوظات", "الآيات المحفوظة على هذا الجهاز")
         val saved = prefs.getStringSet("saved_ayahs", emptySet())?.toList().orEmpty().sorted()
+        screen("المحفوظات", saved.size.toString() + " آية محفوظة على هذا الجهاز")
         if (saved.isEmpty()) root?.addView(label("لا توجد آيات محفوظة بعد.", 15f))
         saved.forEach { item -> card("الآية " + item, "فتح الموضع أو إزالة الحفظ", "☆") {
             val parts = item.split(":")
