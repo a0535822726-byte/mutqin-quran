@@ -84,6 +84,20 @@ class MainActivity : Activity() {
     private var selectedReader = "ماهر المعيقلي"
     private var tasbeeh = 0
     private val readers = listOf("ماهر المعيقلي", "عبد الرحمن السديس", "ياسر الدوسري", "مشاري العفاسي", "محمود خليل الحصري", "محمد صديق المنشاوي", "عبد الباسط عبد الصمد", "سعد الغامدي", "أحمد العجمي", "علي جابر")
+    private val mushafSurahNames = listOf(
+            "الفاتحة", "البقرة", "آل عمران", "النساء", "المائدة", "الأنعام", "الأعراف", "الأنفال", "التوبة", "يونس",
+            "هود", "يوسف", "الرعد", "إبراهيم", "الحجر", "النحل", "الإسراء", "الكهف", "مريم", "طه",
+            "الأنبياء", "الحج", "المؤمنون", "النور", "الفرقان", "الشعراء", "النمل", "القصص", "العنكبوت", "الروم",
+            "لقمان", "السجدة", "الأحزاب", "سبأ", "فاطر", "يس", "الصافات", "ص", "الزمر", "غافر",
+            "فصلت", "الشورى", "الزخرف", "الدخان", "الجاثية", "الأحقاف", "محمد", "الفتح", "الحجرات", "ق",
+            "الذاريات", "الطور", "النجم", "القمر", "الرحمن", "الواقعة", "الحديد", "المجادلة", "الحشر", "الممتحنة",
+            "الصف", "الجمعة", "المنافقون", "التغابن", "الطلاق", "التحريم", "الملك", "القلم", "الحاقة", "المعارج",
+            "نوح", "الجن", "المزمل", "المدثر", "القيامة", "الإنسان", "المرسلات", "النبأ", "النازعات", "عبس",
+            "التكوير", "الانفطار", "المطففين", "الانشقاق", "البروج", "الطارق", "الأعلى", "الغاشية", "الفجر", "البلد",
+            "الشمس", "الليل", "الضحى", "الشرح", "التين", "العلق", "القدر", "البينة", "الزلزلة", "العاديات",
+            "القارعة", "التكاثر", "العصر", "الهمزة", "الفيل", "قريش", "الماعون", "الكوثر", "الكافرون", "النصر",
+            "المسد", "الإخلاص", "الفلق", "الناس"
+        )
     private val fatiha = listOf(
         "بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ",
         "الْحَمْدُ لِلَّهِ رَبِّ الْعَالَمِينَ",
@@ -539,6 +553,16 @@ class MainActivity : Activity() {
         pageBar.addView(button("›", false) { loadMushafPage(mushafPage + 1) }, LinearLayout.LayoutParams(52, -2))
         root.addView(pageBar)
 
+        val indexActions = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER
+        }
+        indexActions.addView(button("فهرس السور", false) { showMushafSurahIndex() },
+            LinearLayout.LayoutParams(0, -2, 1f))
+        indexActions.addView(button("علاماتي", false) { showMushafBookmarks() },
+            LinearLayout.LayoutParams(0, -2, 1f))
+        root.addView(indexActions)
+
         pageStatus = label("جارٍ تحميل صفحة المصحف…", 12f, muted)
         root.addView(pageStatus!!)
         mushafWebView = WebView(this).apply {
@@ -938,6 +962,34 @@ class MainActivity : Activity() {
         }.start()
     }
 
+    private fun showMushafSurahIndex() {
+        val labels = mushafSurahNames.mapIndexed { index, name ->
+            "${index + 1}. سورة $name"
+        }.toTypedArray()
+        android.app.AlertDialog.Builder(this)
+            .setTitle("فهرس سور القرآن الكريم")
+            .setItems(labels) { dialog, which ->
+                dialog.dismiss()
+                pageStatus?.text = "جارٍ تحديد بداية سورة ${mushafSurahNames[which]}…"
+                Thread {
+                    val result = QuranPageSource.loadAyahDetails(which + 1, 1)
+                    runOnUiThread {
+                        if (currentPage != "quran") return@runOnUiThread
+                        if (result.isSuccess) {
+                            val (text, page) = result.getOrThrow()
+                            selectedAyah = (which + 1) to 1
+                            selectedAyahText = text
+                            loadMushafPage(page)
+                        } else {
+                            pageStatus?.text = "تعذر تحديد صفحة السورة. تحقق من الإنترنت وحاول مجددًا."
+                        }
+                    }
+                }.start()
+            }
+            .setNegativeButton("إغلاق", null)
+            .show()
+    }
+
     private fun showSurahPicker() {
         val prefs = getSharedPreferences("deeni", MODE_PRIVATE)
         val server = prefs.getString("audio_server", null)
@@ -946,20 +998,7 @@ class MainActivity : Activity() {
             chooseReader()
             return
         }
-        val surahs = listOf(
-            "الفاتحة", "البقرة", "آل عمران", "النساء", "المائدة", "الأنعام", "الأعراف", "الأنفال", "التوبة", "يونس",
-            "هود", "يوسف", "الرعد", "إبراهيم", "الحجر", "النحل", "الإسراء", "الكهف", "مريم", "طه",
-            "الأنبياء", "الحج", "المؤمنون", "النور", "الفرقان", "الشعراء", "النمل", "القصص", "العنكبوت", "الروم",
-            "لقمان", "السجدة", "الأحزاب", "سبأ", "فاطر", "يس", "الصافات", "ص", "الزمر", "غافر",
-            "فصلت", "الشورى", "الزخرف", "الدخان", "الجاثية", "الأحقاف", "محمد", "الفتح", "الحجرات", "ق",
-            "الذاريات", "الطور", "النجم", "القمر", "الرحمن", "الواقعة", "الحديد", "المجادلة", "الحشر", "الممتحنة",
-            "الصف", "الجمعة", "المنافقون", "التغابن", "الطلاق", "التحريم", "الملك", "القلم", "الحاقة", "المعارج",
-            "نوح", "الجن", "المزمل", "المدثر", "القيامة", "الإنسان", "المرسلات", "النبأ", "النازعات", "عبس",
-            "التكوير", "الانفطار", "المطففين", "الانشقاق", "البروج", "الطارق", "الأعلى", "الغاشية", "الفجر", "البلد",
-            "الشمس", "الليل", "الضحى", "الشرح", "التين", "العلق", "القدر", "البينة", "الزلزلة", "العاديات",
-            "القارعة", "التكاثر", "العصر", "الهمزة", "الفيل", "قريش", "الماعون", "الكوثر", "الكافرون", "النصر",
-            "المسد", "الإخلاص", "الفلق", "الناس"
-        )
+        val surahs = mushafSurahNames
         val labels = surahs.mapIndexed { index, name -> "${index + 1}. سورة $name" }.toTypedArray()
         android.app.AlertDialog.Builder(this)
             .setTitle("اختر السورة لتشغيل التلاوة")
