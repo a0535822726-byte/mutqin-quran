@@ -1159,12 +1159,15 @@ class DeeniActivity : Activity(), SensorEventListener {
 
     private fun showMore() {
         screen("المزيد", "أقسام المنصة")
-        card("السيرة والحديث", "المكتبة الإسلامية", "📜") { showSirah() }
-        card("قصص الأنبياء", "قصص قرآنية", "✧") { showStories(false) }
-        card("قصص الصحابة", "سير مختارة", "☼") { showStories(true) }
-        card("الأذكار والتسبيح", "الأذكار والعداد", "◉") { showAdhkar() }
-        card("التجويد والفقه", "التعلم الأساسي", "۞") { showTajweed() }
-        card("المسابقة", "أسئلة إسلامية", "★") { showQuiz() }
+        card("السيرة النبوية", "9 محطات مع مراجع", "📜") { showSirah() }
+        card("الأحاديث النبوية", "28 حديثًا مع الشرح والمصدر", "📖") { showHadith() }
+        card("قصص الأنبياء", "18 قصة مع مراجع", "✧") { showStories(false) }
+        card("قصص الصحابة", "17 سيرة مع مراجع", "☼") { showStories(true) }
+        card("الأذكار والتسبيح", "أذكار مختارة وعدّادات محفوظة", "◉") { showAdhkar() }
+        card("التجويد", "50 درسًا قابلًا للبحث", "۞") { showTajweed() }
+        card("الفقه", "12 بابًا تعليميًا", "⚖") { showFiqh() }
+        card("الأسماء الحسنى", "30 اسمًا ومعنى", "✧") { showNames() }
+        card("المسابقة", "20 سؤالًا مع شرح الإجابة", "★") { showQuiz() }
         root?.addView(button(if (light) "الوضع الفاتح" else "الوضع الداكن", true) {
             light = !light; prefs.edit().putBoolean("light", light).apply(); showMore()
         })
