@@ -1204,11 +1204,11 @@ class DeeniActivity : Activity(), SensorEventListener {
             q.second.forEachIndexed { i, answer ->
                 options.addView(button(answer, false) {
                     val correct = i == q.third
-                    if (correct) score++
                     AlertDialog.Builder(this)
                         .setTitle(if (correct) "إجابة صحيحة" else "ليست الإجابة الصحيحة")
                         .setMessage("الإجابة الصحيحة: " + q.second[q.third] + "\n" + (if (correct) "أحسنت، أُضيفت نقطة." else "راجع الإجابة الصحيحة ثم تابع.") + "\nالتوضيح: " + explanations[index])
                         .setPositiveButton("السؤال التالي") { _, _ ->
+                            if (correct) score++
                             index++
                             status.text = "النقاط: " + score
                             render()
