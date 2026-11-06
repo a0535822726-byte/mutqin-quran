@@ -1081,7 +1081,7 @@ class DeeniActivity : Activity(), SensorEventListener {
     }
 
     private fun showQuiz() {
-        screen("المسابقة الإسلامية", "أسئلة تعليمية • نقاط افتراضية فقط")
+        screen("المسابقة الإسلامية", "30 سؤالًا مع شرح الإجابات • نقاط افتراضية فقط")
         val qs = listOf(
             Triple("كم عدد سور القرآن؟", listOf("110","112","114","120"), 2),
             Triple("ما أم الكتاب؟", listOf("البقرة","الفاتحة","الإخلاص","الناس"), 1),
