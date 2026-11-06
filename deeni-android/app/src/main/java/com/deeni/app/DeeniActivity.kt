@@ -693,8 +693,12 @@ class DeeniActivity : Activity(), SensorEventListener {
             }
             if (found.isEmpty()) results.addView(label("لا توجد أذكار تطابق البحث.", 14f, muted()))
         }
-        fun favoritesToggleTextUpdate() {
-            favoritesToggle.text = if (favoritesOnly) "عرض جميع القصص" else "عرض القصص المحفوظة فقط"
+        val favoritesToggle = button("عرض القصص المحفوظة فقط", false) {
+            favoritesOnly = !favoritesOnly
+            it.let { view ->
+                (view as? TextView)?.text = if (favoritesOnly) "عرض جميع القصص" else "عرض القصص المحفوظة فقط"
+            }
+            renderStories(search.query?.toString().orEmpty())
         }
         root?.addView(favoritesToggle)
         search.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
@@ -932,11 +936,6 @@ class DeeniActivity : Activity(), SensorEventListener {
         }
         root?.addView(results)
         var favoritesOnly = false
-        val favoritesToggle = button("عرض القصص المحفوظة فقط", false) {
-            favoritesOnly = !favoritesOnly
-            favoritesToggleTextUpdate()
-            renderStories(search.query?.toString().orEmpty())
-        }
         fun renderStories(query: String) {
             results.removeAllViews()
             val filtered = items.filter { item ->
