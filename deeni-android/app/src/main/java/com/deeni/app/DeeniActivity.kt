@@ -864,8 +864,17 @@ class DeeniActivity : Activity() {
             prompt.text = "السؤال " + (index + 1) + ": " + q.first
             q.second.forEachIndexed { i, answer ->
                 options.addView(button(answer, false) {
-                    if (i == q.third) score++
-                    index++; status.text = "النقاط: " + score; render()
+                    val correct = i == q.third
+                    if (correct) score++
+                    AlertDialog.Builder(this)
+                        .setTitle(if (correct) "إجابة صحيحة" else "ليست الإجابة الصحيحة")
+                        .setMessage("الإجابة الصحيحة: " + q.second[q.third] + "\\n" + if (correct) "أحسنت، أُضيفت نقطة." else "راجع الإجابة الصحيحة ثم تابع.")
+                        .setPositiveButton("السؤال التالي") { _, _ ->
+                            index++
+                            status.text = "النقاط: " + score
+                            render()
+                        }
+                        .show()
                 })
             }
         }
