@@ -2023,8 +2023,12 @@ class MainActivity : Activity() {
         root.addView(HorizontalScrollView(this).apply { isHorizontalScrollBarEnabled = false; addView(chips) })
         val content = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         root.addView(content)
+        val tajweedProgress = getSharedPreferences("deeni_tajweed_progress", MODE_PRIVATE)
+        fun lessonProgressKey(lesson: Lesson) = "done_" + lesson.group + "_" + lesson.title
         fun drawLessons() {
             content.removeAllViews()
+            val completedCount = lessons.count { tajweedProgress.getBoolean(lessonProgressKey(it), false) }
+            content.addView(label("إنجاز المنهج: $completedCount من ${lessons.size} درس", 15f, gold, true))
             val filtered = lessons.filter { activeGroup == "الكل" || it.group == activeGroup }
             content.addView(label("عدد الدروس المعروضة: " + filtered.size, 13f, muted, true))
             filtered.forEachIndexed { index, lesson ->
@@ -2034,6 +2038,17 @@ class MainActivity : Activity() {
                 card.addView(label("المثال القرآني: ﴿" + lesson.example + "﴾", 18f, cream, true))
                 card.addView(label("الموضع: " + lesson.place, 12f, muted))
                 card.addView(label("التطبيق: " + lesson.exercise, 13f, muted))
+                val completed = CheckBox(this).apply {
+                    text = "أكملت هذا الدرس"
+                    setTextColor(cream)
+                    isChecked = tajweedProgress.getBoolean(lessonProgressKey(lesson), false)
+                    setOnCheckedChangeListener { _, checked ->
+                        tajweedProgress.edit().putBoolean(lessonProgressKey(lesson), checked).apply()
+                        val totalDone = lessons.count { tajweedProgress.getBoolean(lessonProgressKey(it), false) }
+                        content.getChildAt(0)?.let { (it as? TextView)?.text = "إنجاز المنهج: $totalDone من ${lessons.size} درس" }
+                    }
+                }
+                card.addView(completed)
                 content.addView(card)
                 content.addView(space(8))
             }
