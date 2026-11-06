@@ -617,19 +617,57 @@ class DeeniActivity : Activity(), SensorEventListener {
     }
 
     private fun showSirah() {
-        screen("السيرة النبوية", "محطات موجزة للمراجعة")
-        listOf(
-            "المولد والنشأة" to "نشأ النبي ﷺ في مكة، وتوفي والده قبل مولده، ثم كفله جده وبعده عمه.",
-            "نزول الوحي" to "نزل الوحي عليه في غار حراء، وكانت بداية الرسالة بآيات من سورة العلق.",
-            "الدعوة في مكة" to "دعا إلى توحيد الله وصبر المؤمنون على الأذى.",
-            "الهجرة" to "هاجر النبي ﷺ وأصحابه إلى المدينة وأسس مجتمعًا مسلمًا.",
-            "بدر وأحد والخندق" to "محطات من تاريخ المجتمع المسلم في المدينة.",
-            "صلح الحديبية" to "كان في السنة السادسة للهجرة.",
-            "فتح مكة" to "كان في السنة الثامنة للهجرة.",
-            "حجة الوداع" to "كانت في السنة العاشرة للهجرة.",
-            "وفاته ﷺ" to "توفي في المدينة في السنة الحادية عشرة للهجرة."
-        ).forEachIndexed { i, item -> card((i + 1).toString() + ". " + item.first, item.second, "☾") {} }
-        root?.addView(label("هذه خلاصة تمهيدية وليست كتاب سيرة كاملًا؛ تُراجع الروايات في كتب السيرة المحققة.", 11f, muted()))
+        val events = listOf(
+            Triple("المولد والنشأة", "وُلد النبي ﷺ في مكة، ونشأ يتيم الأب، ثم كفله جده عبد المطلب وبعده عمه أبو طالب. عُرف قبل البعثة بالصدق والأمانة.", "سيرة ابن هشام؛ الطبقات الكبرى لابن سعد. بعض تفاصيل التواريخ والروايات تحتاج إلى تمييز درجاتها."),
+            Triple("نزول الوحي", "كان يتعبد في غار حراء، فجاءه جبريل عليه السلام بأول الوحي من سورة العلق، ثم بدأت مرحلة تبليغ الرسالة.", "صحيح البخاري، كتاب بدء الوحي؛ العلق: 1–5؛ المدثر: 1–7."),
+            Triple("الدعوة في مكة", "بدأت الدعوة بتعليم التوحيد وتزكية النفوس، ثم جهر النبي ﷺ بالدعوة، وصبر هو وأصحابه على الأذى والثبات على الحق.", "سيرة ابن هشام؛ المدثر: 1–7؛ الحجر: 94–99."),
+            Triple("الهجرة إلى المدينة", "أذن الله للمؤمنين بالهجرة، وخرج النبي ﷺ مع أبي بكر رضي الله عنه، ثم وصل إلى المدينة وأسس مجتمعًا يقوم على الإيمان والأخوة.", "صحيح البخاري، كتاب مناقب الأنصار والهجرة؛ التوبة: 40؛ الأنفال: 72."),
+            Triple("بدر وأحد والخندق", "شهدت المدينة أحداثًا كبرى ثبت فيها المؤمنون وتعلموا الطاعة والصبر والشورى، ووردت في القرآن إشارات مفصلة إلى هذه الوقائع.", "آل عمران: 121–180؛ الأنفال: 5–19؛ الأحزاب: 9–27؛ كتب المغازي الصحيحة."),
+            Triple("صلح الحديبية", "خرج النبي ﷺ وأصحابه يريدون العمرة، فوقع الصلح مع قريش، وكان في عاقبته فتح وخير للمسلمين رغم ما بدا في بعض شروطه أول الأمر.", "الفتح: 1–29؛ صحيح البخاري، كتاب الشروط والمغازي."),
+            Triple("فتح مكة", "دخل النبي ﷺ مكة في العام الثامن للهجرة، وأزال مظاهر الشرك من البيت، وأعلن العفو والصفح عن كثير ممن آذوه.", "صحيح البخاري، كتاب المغازي؛ التوبة: 25–27؛ النصر: 1–3."),
+            Triple("حجة الوداع", "حج النبي ﷺ بالناس في السنة العاشرة للهجرة، وبيّن لهم مناسكهم وأوصاهم بالحقوق والتمسك بالدين.", "صحيح مسلم، كتاب الحج؛ البقرة: 197؛ المائدة: 3."),
+            Triple("وفاته ﷺ", "توفي النبي ﷺ في المدينة في السنة الحادية عشرة للهجرة بعد أن بلّغ الرسالة وأدى الأمانة ونصح الأمة، ودفن في حجرة عائشة رضي الله عنها.", "صحيح البخاري وصحيح مسلم، كتاب المغازي والفضائل؛ سيرة ابن هشام.")
+        )
+        screen("السيرة النبوية", events.size.toString() + " محطات مختارة مع مراجع")
+        root?.addView(label("ابحث عن مرحلة أو حدث. هذه خلاصة تعليمية، وتفاصيل السيرة تُراجع في المصادر المحققة.", 12f, muted()))
+        val search = SearchView(this).apply {
+            queryHint = "ابحث في السيرة…"
+            isIconifiedByDefault = false
+        }
+        root?.addView(search)
+        val results = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        root?.addView(results)
+        fun renderEvents(query: String) {
+            results.removeAllViews()
+            val found = events.filter {
+                it.first.contains(query.trim(), true) ||
+                    it.second.contains(query.trim(), true) ||
+                    it.third.contains(query.trim(), true)
+            }
+            found.forEachIndexed { index, event ->
+                results.addView(button((index + 1).toString() + ". " + event.first, false) {
+                    AlertDialog.Builder(this)
+                        .setTitle(event.first)
+                        .setMessage(event.second + "\n\nالمراجع: " + event.third)
+                        .setPositiveButton("إغلاق", null)
+                        .show()
+                })
+                results.addView(gap(7))
+            }
+            if (found.isEmpty()) results.addView(label("لا توجد نتائج في السيرة.", 14f, muted()))
+        }
+        search.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
+            override fun onQueryTextSubmit(query: String?): Boolean {
+                renderEvents(query.orEmpty())
+                search.clearFocus()
+                return true
+            }
+            override fun onQueryTextChange(newText: String?): Boolean {
+                renderEvents(newText.orEmpty())
+                return true
+            }
+        })
+        renderEvents("")
     }
 
     private fun showHadith() {
