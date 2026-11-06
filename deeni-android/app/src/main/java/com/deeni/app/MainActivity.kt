@@ -36,12 +36,13 @@ import java.util.Locale
 
 class MainActivity : Activity() {
     private var lightTheme = false
-    private var bg = Color.rgb(9, 28, 25)
-    private var panel = Color.rgb(18, 48, 42)
-    private var panel2 = Color.rgb(25, 61, 53)
-    private var gold = Color.rgb(218, 183, 111)
-    private var cream = Color.rgb(246, 241, 226)
-    private var muted = Color.rgb(174, 194, 184)
+    // Deeni visual system: midnight navy, warm gold, and a clear Mushaf paper surface.
+    private var bg = Color.rgb(3, 7, 18)
+    private var panel = Color.rgb(17, 28, 53)
+    private var panel2 = Color.rgb(11, 19, 41)
+    private var gold = Color.rgb(245, 158, 11)
+    private var cream = Color.rgb(249, 250, 251)
+    private var muted = Color.rgb(170, 180, 197)
 
     private fun applyTheme() {
         if (lightTheme) {
@@ -52,12 +53,12 @@ class MainActivity : Activity() {
             cream = Color.rgb(37, 53, 46)
             muted = Color.rgb(94, 111, 101)
         } else {
-            bg = Color.rgb(9, 28, 25)
-            panel = Color.rgb(18, 48, 42)
-            panel2 = Color.rgb(25, 61, 53)
-            gold = Color.rgb(218, 183, 111)
-            cream = Color.rgb(246, 241, 226)
-            muted = Color.rgb(174, 194, 184)
+            bg = Color.rgb(3, 7, 18)
+            panel = Color.rgb(17, 28, 53)
+            panel2 = Color.rgb(11, 19, 41)
+            gold = Color.rgb(245, 158, 11)
+            cream = Color.rgb(249, 250, 251)
+            muted = Color.rgb(170, 180, 197)
         }
         window.statusBarColor = bg
         window.navigationBarColor = bg
@@ -694,7 +695,15 @@ class MainActivity : Activity() {
             setPadding(14, 14, 14, 14)
         }
         root.addView(recitationTextView!!)
+        root.addView(button("ابدأ التسميع / أعد المحاولة", true) {
+            recitationStatusView?.text = "جارٍ تشغيل الميكروفون…"
+            recitationTextView?.text = "ابدأ القراءة؛ سيظهر النص الذي التقطه الهاتف هنا."
+            recitationStatusView?.let { status -> recitationTextView?.let { live ->
+                beginRecognition(status, live)
+            } }
+        })
         root.addView(button("إيقاف الميكروفون", false) {
+            pendingRecognitionAfterPermission = false
             stopRecognition()
             recitationStatusView?.text = "تم إيقاف الميكروفون"
         })
