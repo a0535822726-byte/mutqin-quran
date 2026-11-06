@@ -548,16 +548,57 @@ class DeeniActivity : Activity() {
     }
 
     private fun showHadith() {
-        screen("الحديث النبوي", "أحاديث مختارة مع اسم المصدر")
-        listOf(
+        val items = listOf(
             "إنما الأعمال بالنيات، وإنما لكل امرئ ما نوى." to "صحيح البخاري وصحيح مسلم.",
             "الدين النصيحة." to "صحيح مسلم.",
             "من كان يؤمن بالله واليوم الآخر فليقل خيرًا أو ليصمت." to "صحيح البخاري وصحيح مسلم.",
             "لا يؤمن أحدكم حتى يحب لأخيه ما يحب لنفسه." to "صحيح البخاري وصحيح مسلم.",
             "الكلمة الطيبة صدقة." to "صحيح البخاري وصحيح مسلم.",
             "يسروا ولا تعسروا، وبشروا ولا تنفروا." to "صحيح البخاري وصحيح مسلم."
-        ).forEachIndexed { i, item -> card("حديث " + (i + 1), "«" + item.first + "»\nالمصدر: " + item.second, "📜") {} }
-        root?.addView(label("هذه مختارات وليست موسوعة حديثية؛ عند النشر أو الشرح يُراجع لفظ الحديث في مصدره.", 11f, muted()))
+        )
+        screen("الحديث النبوي", "مختارات صحيحة • " + items.size + " أحاديث في هذه الدفعة")
+        root?.addView(label("ابحث في نص الحديث أو مصدره. هذه مختارات وليست موسوعة، ولم نضف أرقام تخريج غير متحقق منها.", 12f, muted()))
+        val search = SearchView(this).apply {
+            queryHint = "ابحث في الأحاديث…"
+            isIconifiedByDefault = false
+        }
+        root?.addView(search)
+        val results = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        root?.addView(results)
+        fun renderHadith(query: String) {
+            results.removeAllViews()
+            val found = items.filter { it.first.contains(query.trim(), true) || it.second.contains(query.trim(), true) }
+            found.forEachIndexed { index, item ->
+                results.addView(cardView("حديث " + (index + 1), "«" + item.first + "»\nالمصدر: " + item.second))
+            }
+            if (found.isEmpty()) results.addView(label("لا توجد أحاديث تطابق البحث.", 14f, muted()))
+        }
+        search.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
+            override fun onQueryTextSubmit(query: String?): Boolean {
+                renderHadith(query.orEmpty())
+                search.clearFocus()
+                return true
+            }
+            override fun onQueryTextChange(newText: String?): Boolean {
+                renderHadith(newText.orEmpty())
+                return true
+            }
+        })
+        renderHadith("")
+    }
+
+    private fun cardView(title: String, description: String): View {
+        val view = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            background = shape(panel())
+            setPadding(15, 12, 15, 12)
+            addView(label(title, 16f, accent(), true))
+            addView(label(description, 15f, ink()))
+        }
+        val params = LinearLayout.LayoutParams(-1, -2)
+        params.bottomMargin = 8
+        view.layoutParams = params
+        return view
     }
 
     private fun showStories(companions: Boolean) {
