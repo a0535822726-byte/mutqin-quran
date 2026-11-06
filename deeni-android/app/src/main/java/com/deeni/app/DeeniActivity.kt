@@ -693,6 +693,10 @@ class DeeniActivity : Activity(), SensorEventListener {
             }
             if (found.isEmpty()) results.addView(label("لا توجد أذكار تطابق البحث.", 14f, muted()))
         }
+        fun favoritesToggleTextUpdate() {
+            favoritesToggle.text = if (favoritesOnly) "عرض جميع القصص" else "عرض القصص المحفوظة فقط"
+        }
+        root?.addView(favoritesToggle)
         search.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
             override fun onQueryTextSubmit(query: String?): Boolean {
                 renderAdhkar(query.orEmpty())
@@ -927,12 +931,20 @@ class DeeniActivity : Activity(), SensorEventListener {
             layoutDirection = View.LAYOUT_DIRECTION_RTL
         }
         root?.addView(results)
+        var favoritesOnly = false
+        val favoritesToggle = button("عرض القصص المحفوظة فقط", false) {
+            favoritesOnly = !favoritesOnly
+            favoritesToggleTextUpdate()
+            renderStories(search.query?.toString().orEmpty())
+        }
         fun renderStories(query: String) {
             results.removeAllViews()
             val filtered = items.filter { item ->
-                query.isBlank() || item.first.contains(query.trim(), ignoreCase = true) ||
+                val favoriteKey = "story_fav_" + (if (companions) "companion_" else "prophet_") + item.first
+                (!favoritesOnly || prefs.getBoolean(favoriteKey, false)) &&
+                    (query.isBlank() || item.first.contains(query.trim(), ignoreCase = true) ||
                     item.second.contains(query.trim(), ignoreCase = true) ||
-                    item.third.contains(query.trim(), ignoreCase = true)
+                    item.third.contains(query.trim(), ignoreCase = true))
             }
             if (filtered.isEmpty()) {
                 results.addView(label("لا توجد قصة تطابق عبارة البحث.", 14f, muted()))
