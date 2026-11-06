@@ -126,7 +126,11 @@ class MainActivity : Activity() {
         applyTheme()
         tasbeeh = getSharedPreferences("deeni", MODE_PRIVATE).getInt("tasbeeh", 0)
         selectedReader = getSharedPreferences("deeni", MODE_PRIVATE).getString("reader", readers[0]) ?: readers[0]
-        showSplash()
+        if (intent.getBooleanExtra("open_mushaf", false)) {
+            showQuran(intent.getBooleanExtra("start_mic", false))
+        } else {
+            showSplash()
+        }
     }
 
     /** White opening screen, then enter the Deeni dashboard with the full Mushaf one tap away. */
