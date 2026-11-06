@@ -581,7 +581,7 @@ class DeeniActivity : Activity(), SensorEventListener {
         val cityInput = EditText(this).apply {
             setText(city)
             hint = "اسم المدينة"
-            singleLine = true
+            setSingleLine(true)
             textSize = 16f
             setTextColor(ink())
             background = shape(panel())
