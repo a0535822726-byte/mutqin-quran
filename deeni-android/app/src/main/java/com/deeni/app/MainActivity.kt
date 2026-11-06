@@ -93,7 +93,7 @@ class MainActivity : Activity() {
         "اهْدِنَا الصِّرَاطَ الْمُسْتَقِيمَ",
         "صِرَاطَ الَّذِينَ أَنْعَمْتَ عَلَيْهِمْ غَيْرِ الْمَغْضُوبِ عَلَيْهِمْ وَلَا الضَّالِّينَ"
     )
-    private val expectedWords = fatiha.joinToString(" ").split(Regex("\s+"))
+    private val expectedWords = fatiha.joinToString(" ").split(Regex("\\s+"))
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
