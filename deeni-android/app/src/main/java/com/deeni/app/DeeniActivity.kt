@@ -146,6 +146,10 @@ class DeeniActivity : Activity(), SensorEventListener {
 
     private fun screen(title: String, subtitle: String) {
         currentScreen = title
+        if (title != "القبلة") {
+            stopCompassSensor()
+            compassView = null
+        }
         val shell = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL; layoutDirection = View.LAYOUT_DIRECTION_RTL
             setBackgroundColor(bg())
