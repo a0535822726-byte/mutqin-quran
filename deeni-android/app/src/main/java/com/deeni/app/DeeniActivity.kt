@@ -499,14 +499,26 @@ class DeeniActivity : Activity(), SensorEventListener {
         screen("المحفوظات", "الآيات المحفوظة على هذا الجهاز")
         val saved = prefs.getStringSet("saved_ayahs", emptySet())?.toList().orEmpty().sorted()
         if (saved.isEmpty()) root?.addView(label("لا توجد آيات محفوظة بعد.", 15f))
-        saved.forEach { item -> card("الآية " + item, "اضغط لفتح موضعها", "☆") {
+        saved.forEach { item -> card("الآية " + item, "فتح الموضع أو إزالة الحفظ", "☆") {
             val parts = item.split(":")
             val sn = parts.getOrNull(0)?.toIntOrNull()
             val an = parts.getOrNull(1)?.toIntOrNull()
-            if (sn != null && an != null) Thread {
-                val r = QuranPageSource.loadAyahDetails(sn, an)
-                runOnUiThread { if (r.isSuccess) loadPage(r.getOrThrow().second) }
-            }.start()
+            AlertDialog.Builder(this)
+                .setTitle("الآية " + item)
+                .setPositiveButton("فتح موضعها") { _, _ ->
+                    if (sn != null && an != null) Thread {
+                        val loaded = QuranPageSource.loadAyahDetails(sn, an)
+                        runOnUiThread { if (loaded.isSuccess) loadPage(loaded.getOrThrow().second) }
+                    }.start()
+                }
+                .setNeutralButton("إزالة من المحفوظات") { _, _ ->
+                    val current = prefs.getStringSet("saved_ayahs", emptySet())?.toMutableSet() ?: mutableSetOf()
+                    current.remove(item)
+                    prefs.edit().putStringSet("saved_ayahs", current).apply()
+                    showSaved()
+                }
+                .setNegativeButton("إلغاء", null)
+                .show()
         } }
     }
 
