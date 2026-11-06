@@ -648,10 +648,10 @@ class DeeniActivity : Activity() {
                 return
             }
             filtered.forEachIndexed { i, item ->
-                results.addView(button((i + 1).toString() + ". " + item.first + "\\n" + item.second.take(135) + "…", false) {
+                results.addView(button((i + 1).toString() + ". " + item.first + "\n" + item.second.take(135) + "…", false) {
                     AlertDialog.Builder(this)
                         .setTitle(item.first)
-                        .setMessage(item.second + "\\n\\nالمراجع: " + item.third)
+                        .setMessage(item.second + "\n\nالمراجع: " + item.third)
                         .setPositiveButton("إغلاق", null)
                         .show()
                 })
@@ -797,7 +797,7 @@ class DeeniActivity : Activity() {
             if (index >= qs.size) {
                 val best = maxOf(prefs.getInt("best_quiz_score", 0), score)
                 prefs.edit().putInt("best_quiz_score", best).apply()
-                prompt.text = "انتهت المسابقة. نتيجتك: " + score + " من " + qs.size + "\\nأفضل نتيجة محفوظة: " + best
+                prompt.text = "انتهت المسابقة. نتيجتك: " + score + " من " + qs.size + "\nأفضل نتيجة محفوظة: " + best
                 options.addView(button("إعادة المسابقة", true) {
                     index = 0
                     score = 0
