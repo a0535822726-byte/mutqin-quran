@@ -734,7 +734,7 @@ class DeeniActivity : Activity() {
                 results.addView(button((if (isDone) "✓ " else "") + "الدرس " + (n + 1) + ": " + lesson.first, false) {
                     AlertDialog.Builder(this)
                         .setTitle(lesson.first)
-                        .setMessage(lesson.second + "\n\n" + lesson.third)
+                        .setMessage("الشرح والحكم:\\n" + lesson.second + "\\n\\nالمثال والموضع أو التدريب:\\n" + lesson.third + "\\n\\nطريقة المراجعة:\\nاقرأ المثال من المصحف، واستمع إلى قارئ متقن، ثم اعرض أداءك على معلم؛ فالنص وحده لا يكفي لتصحيح المخارج والصفات.")
                         .setPositiveButton(if (completedLessons.contains(lesson.first)) "إلغاء علامة المراجعة" else "تمت المراجعة") { _, _ ->
                             if (completedLessons.contains(lesson.first)) completedLessons.remove(lesson.first) else completedLessons.add(lesson.first)
                             prefs.edit().putStringSet("tajweed_done", completedLessons).apply()
