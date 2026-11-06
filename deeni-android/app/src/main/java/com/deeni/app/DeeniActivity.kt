@@ -253,7 +253,7 @@ class DeeniActivity : Activity(), SensorEventListener {
         tiles("البحث", "البحث في الآيات", { showSearch() }, "المحفوظات", "آيات محفوظة", { showSaved() })
         heading("العبادة اليومية")
         tiles("الصلاة", "مواقيت أبو عريش", { showPrayer() }, "القبلة", "اتجاه مكة", { showQibla() })
-        tiles("الأذكار", "أذكار مختارة", { showAdhkar() }, "التسبيح", "عداد محفوظ", { showTasbeeh() })
+        tiles("الأذكار", "12 ذكرًا مع مصادر", { showAdhkar() }, "التسبيح", "عداد محفوظ", { showTasbeeh() })
         heading("المكتبة الإسلامية")
         tiles("السيرة", "9 محطات مع مراجع", { showSirah() }, "الحديث", "28 حديثًا مع الشرح والمصدر", { showHadith() })
         tiles("الأنبياء", "18 قصة مع مراجع", { showStories(false) }, "الصحابة", "17 سيرة مع مراجع", { showStories(true) })
@@ -1198,7 +1198,8 @@ class DeeniActivity : Activity(), SensorEventListener {
         card("الأحاديث النبوية", "28 حديثًا مع الشرح والمصدر", "📖") { showHadith() }
         card("قصص الأنبياء", "18 قصة مع مراجع", "✧") { showStories(false) }
         card("قصص الصحابة", "17 سيرة مع مراجع", "☼") { showStories(true) }
-        card("الأذكار والتسبيح", "أذكار مختارة وعدّادات محفوظة", "◉") { showAdhkar() }
+        card("الأذكار", "12 ذكرًا مع مصادر وعدّادات محفوظة", "◉") { showAdhkar() }
+        card("التسبيح", "عداد مستقل محفوظ", "◉") { showTasbeeh() }
         card("التجويد", "50 درسًا قابلًا للبحث", "۞") { showTajweed() }
         card("الفقه", "12 بابًا تعليميًا", "⚖") { showFiqh() }
         card("الأسماء الحسنى", "30 اسمًا ومعنى", "✧") { showNames() }
