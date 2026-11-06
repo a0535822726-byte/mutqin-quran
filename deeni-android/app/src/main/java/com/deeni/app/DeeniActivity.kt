@@ -868,7 +868,7 @@ class DeeniActivity : Activity() {
                     if (correct) score++
                     AlertDialog.Builder(this)
                         .setTitle(if (correct) "إجابة صحيحة" else "ليست الإجابة الصحيحة")
-                        .setMessage("الإجابة الصحيحة: " + q.second[q.third] + "\\n" + if (correct) "أحسنت، أُضيفت نقطة." else "راجع الإجابة الصحيحة ثم تابع.")
+                        .setMessage("الإجابة الصحيحة: " + q.second[q.third] + "\n" + if (correct) "أحسنت، أُضيفت نقطة." else "راجع الإجابة الصحيحة ثم تابع.")
                         .setPositiveButton("السؤال التالي") { _, _ ->
                             index++
                             status.text = "النقاط: " + score
