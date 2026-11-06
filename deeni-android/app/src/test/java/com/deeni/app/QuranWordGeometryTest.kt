@@ -41,8 +41,8 @@ class QuranWordGeometryTest {
 
     @Test fun scalesCoordinatesWithoutChangingAspectRatio() {
         val box = QuranWordBox(1, 1, 1, 450, 718, 90, 68)
-        val scaled = box.scaleTo(900, 1600)
-        assertEquals(900f / 1437f, scaled.width / 90f, 0.0001f)
+        val scaled = box.scaleTo(600, 1600)
+        assertEquals(600f / 900f, scaled.width / 90f, 0.0001f)
         assertTrue(scaled.x >= 0f)
         assertTrue(scaled.y >= 0f)
     }
